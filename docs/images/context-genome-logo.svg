@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Context Genome logo</title>
+  <desc id="desc">A context ring containing a genome-like double strand and selection nodes.</desc>
+  <defs>
+    <linearGradient id="ring" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#172026"/>
+      <stop offset="0.5" stop-color="#168b88"/>
+      <stop offset="1" stop-color="#5967c7"/>
+    </linearGradient>
+    <linearGradient id="helixA" x1="138" y1="128" x2="374" y2="384" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#168b88"/>
+      <stop offset="1" stop-color="#3a965b"/>
+    </linearGradient>
+    <linearGradient id="helixB" x1="374" y1="128" x2="138" y2="384" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5967c7"/>
+      <stop offset="1" stop-color="#c94f6d"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#172026" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect x="30" y="30" width="452" height="452" rx="112" fill="#fbfcfc" stroke="#d8e0e5" stroke-width="10"/>
+
+  <g filter="url(#softShadow)">
+    <circle cx="256" cy="256" r="162" fill="#ffffff" stroke="url(#ring)" stroke-width="24"/>
+    <circle cx="256" cy="256" r="112" fill="#f0f6f2" stroke="#d8e0e5" stroke-width="4"/>
+  </g>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M166 144 C338 160 174 352 346 368" stroke="url(#helixA)" stroke-width="22"/>
+    <path d="M346 144 C174 160 338 352 166 368" stroke="url(#helixB)" stroke-width="22"/>
+  </g>
+
+  <g stroke="#172026" stroke-opacity="0.18" stroke-width="8" stroke-linecap="round">
+    <path d="M191 178 H321"/>
+    <path d="M178 222 H334"/>
+    <path d="M178 290 H334"/>
+    <path d="M191 334 H321"/>
+  </g>
+
+  <g stroke="#ffffff" stroke-width="8">
+    <circle cx="166" cy="144" r="25" fill="#168b88"/>
+    <circle cx="346" cy="144" r="25" fill="#5967c7"/>
+    <circle cx="190" cy="218" r="21" fill="#3a965b"/>
+    <circle cx="322" cy="218" r="21" fill="#c98b22"/>
+    <circle cx="190" cy="294" r="21" fill="#c94f6d"/>
+    <circle cx="322" cy="294" r="21" fill="#168b88"/>
+    <circle cx="166" cy="368" r="25" fill="#5967c7"/>
+    <circle cx="346" cy="368" r="25" fill="#3a965b"/>
+  </g>
+
+  <circle cx="256" cy="256" r="35" fill="#172026"/>
+  <path d="M243 256 L253 266 L272 244" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

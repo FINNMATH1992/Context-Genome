@@ -1,0 +1,231 @@
+# Context Genome
+
+English | [中文](README.zh-CN.md)
+
+Author: FINNMATH1992
+
+<p align="center">
+  <img src="docs/images/context-genome-logo.svg" alt="Context Genome logo" width="160" />
+</p>
+
+An LLM context evolution sandbox.
+
+Context Genome treats each LLM organism's context as a genome: a compact, editable bundle of methods, preferences, ability weights, short-term memory, and self-revision rules. Organisms act inside a grid ecology, gather energy, move, reproduce, steal fragments, repair themselves, reflect, and rewrite their own context. A researcher can observe the ecology, tune the world, export runs, and directly edit any organism's context genome to see how behavior changes.
+
+![Context Genome overview](docs/images/context-genome-overview.png)
+
+## Research Thesis
+
+Context Genome explores a simple hypothesis: the base LLM can be treated as a relatively balanced, general, understanding-oriented capability layer, while context acts as an editable constraint system that gives the model a particular personality, goal structure, method, risk profile, and action style.
+
+In this view, the evolving unit is not the model weights. The evolving unit is context. We try to keep the underlying model homogeneous and let organisms differ mainly through the context genomes they carry: what they believe, what they prioritize, how they act, how they repair, how they copy, and when they reflect. The same model can produce different behavioral patterns under different contextual constraints.
+
+The closed ecology supplies selection pressure. Contexts that induce useful behavior under the current resources, risks, competition, and spatial structure are more likely to be copied, preserved, stolen, or refined through reflection. Contexts that are poorly adapted lose energy, become corrupted, die, or become marginal. The project therefore studies natural selection at the context layer: behavior is shaped by context, and fitness is assigned by environmental feedback.
+
+This is also a cost-oriented question. Maintaining, copying, mutating, and selecting context is far cheaper than retraining model parameters. Context Genome lowers the question of selfhood and self-evolution to an experimentally tractable layer: can an agent form a persistent self-description, self-constraint, and self-revision process through context, and can those contexts selectively change under environmental feedback?
+
+## Core Ideas
+
+- **Organism**: A living virtual directory with a bound LLM dialogue state.
+- **Context genome**: The heritable context carried by an organism. In the current implementation it lives in `SKILL.md`, `memory.md`, and recent `dialogue.jsonl` turns.
+- **Cell**: A grid niche with energy, minerals, radiation, entropy, capacity, and a local context fragment.
+- **Action**: Each organism returns exactly one strict JSON action per turn, such as `harvest`, `copy`, `move`, `steal`, `reflect`, or `repair`.
+- **Evolution**: Copying inherits or mutates context; stealing grafts useful neighboring fragments; reflection writes feedback back into the organism's own context.
+- **Researcher**: The browser observer who can tune parameters, pause, export, load, edit context, and inject new seeds.
+
+## Install And Run
+
+Context Genome currently uses only the Python standard library. Run it from the project root with Python 3.11 or newer:
+
+```bash
+python -m context_genome.server --host 127.0.0.1 --port 8765
+```
+
+Open:
+
+```text
+http://127.0.0.1:8765
+```
+
+If the port is busy, use another one:
+
+```bash
+python -m context_genome.server --host 127.0.0.1 --port 8777
+```
+
+## Connect An LLM
+
+The browser defaults to `LLM JSON` mode. The server calls an OpenAI-compatible `/chat/completions` endpoint and parses the returned JSON action.
+
+### Cost Note
+
+This sandbox can call the model many times. In `LLM JSON` mode, each scheduled organism may issue one chat completion per tick, and continuous play can quickly multiply token usage. For normal experiments, use a small, inexpensive, fast model first, such as `deepseek-v4-flash` or another OpenAI-compatible flash/mini model. Larger reasoning models are better reserved for short, controlled runs, report generation, or comparison studies.
+
+Practical defaults:
+
+- Keep `Calls / tick` modest while tuning a world.
+- Use `Step` or short `Play` runs before leaving the ecology running.
+- Leave DeepSeek thinking disabled unless you are intentionally testing reasoning-heavy behavior.
+- Watch the `LLM tokens` and `cache hit` cards in the top status bar.
+
+Set credentials before starting the server:
+
+```bash
+export OPENAI_API_KEY="..."
+export OPENAI_MODEL="deepseek-v4-flash"
+export OPENAI_BASE_URL="https://api.deepseek.com/v1"
+```
+
+Project-specific variables take priority:
+
+```bash
+export CONTEXT_GENOME_LLM_API_KEY="..."
+export CONTEXT_GENOME_LLM_MODEL="deepseek-v4-flash"
+export CONTEXT_GENOME_LLM_BASE_URL="https://api.deepseek.com/v1"
+```
+
+For DeepSeek-compatible endpoints, requests disable thinking by default:
+
+```json
+{"thinking": {"type": "disabled"}}
+```
+
+### Turn Model
+
+Context Genome uses a two-phase LLM turn:
+
+1. Submit concurrent LLM requests for all scheduled organisms in the tick.
+2. Wait for the batch to finish, then apply all actions together.
+
+This avoids giving earlier-returning requests an unfair ordering advantage. If a request fails, times out, or exceeds the call cap for the tick, that organism falls back to a rule-agent action for the turn.
+
+## How To Play
+
+![Context editor](docs/images/context-editor.png)
+
+1. **Choose an ecology preset**  
+   Use `Ecology` to switch between `sandbox`, `wild`, `tournament`, and `abiogenesis`. `sandbox` is best for debugging; `wild` adds stronger competition and mutation pressure.
+
+2. **Set up the starting world**  
+   In `Tune`, adjust grid size, initial cell energy, minerals, radiation, initial population, organism energy, and per-cell capacity. These setup values apply on the next `Reset`.
+
+3. **Run the ecology**  
+   Use `Step` for a single advance and `Play` for continuous simulation. `Ticks` controls how many ticks are advanced per play interval.
+
+4. **Read the grid**  
+   Cell color represents the resource field. The letter in the corner marks the local context trait. Dots are organisms; borders and side strips distinguish lineages. Event icons briefly flash for births, moves, deaths, steals, and reflections.
+
+5. **Read the live summary**  
+   `Observe` compresses the current ecology into a short narrative: population, resources, LLM loop status, dominant behavior, and risk signals.
+
+6. **Inspect a cell**  
+   Click any cell and open `Cell` to see energy, minerals, radiation, entropy, the local context fragment, and visible organisms.
+
+7. **Edit an organism's context**  
+   Click an organism, open `Edit`, modify its context genome, and press `Save Context`. This is a direct researcher intervention into the organism's method, ability profile, or self-narrative.
+
+8. **Spawn a new seed**  
+   In `Seed Context`, pick a template or write a new context, select a target cell, and press `Spawn Here`.
+
+9. **Review events**  
+   `Log` shows births, copies, moves, steals, reflections, deaths, LLM calls, and JSON parse failures.
+
+10. **Generate a bilingual report**  
+    `Report` sends a compact global snapshot to the configured LLM and returns a Markdown report in English first, then Chinese. It highlights the leading lineage, its representative context genome, behavior trends, risks, and suggested next experiments.
+
+11. **Export and replay**  
+    `Export Run` saves the current experiment under `runs/<run_id>/`. Later, `Run Artifacts` can load the final state back into the observer.
+
+## Context Genome Format
+
+A minimal organism context looks like this:
+
+```text
+# Skill
+strategy: forage
+ability.harvest: 1.35
+ability.copy: 0.95
+ability.defense: 0.95
+
+I exist inside a finite directory world.
+I keep this directory runnable, harvest nearby energy, repair damage, and copy
+my stable pattern into safer empty cells when resources are high.
+Each turn I return one strict JSON action.
+```
+
+The file is still called `SKILL.md` for readability, but conceptually it is a context genome. It can contain:
+
+- `strategy`: A coarse strategy label used by the rule-agent and observer.
+- `ability.*`: Ability weights such as `ability.harvest`, `ability.copy`, `ability.steal`, and `ability.reflect`.
+- First-person behavioral rules: The LLM receives them as its persistent self-state, not as an external task list.
+- Reflection rules: The organism can append new lessons to its own context via `reflect`.
+
+Ability weights are budget-normalized by the world, so raising one ability implicitly creates tradeoffs against the others.
+
+## Prompt Role Structure
+
+To make the model behave more like a living organism than a remote-controlled tool, requests are structured as:
+
+```text
+system: external hard constraints, mainly strict JSON output
+assistant: first-person self-state, including charter, ecology contract, SKILL.md, memory.md
+user: the latest world observation for this organism
+assistant: the returned JSON action
+```
+
+First-person context is therefore marked as the model's own prior state. World observation remains external input.
+
+## Browser UI
+
+- `Observe`: World summary, signals, recent actions, lineages, and population trace.
+- `Tune`: World setup, selection pressure, LLM runtime, exports, and loading.
+- `Cell`: The selected cell and organisms inside it.
+- `Edit`: Seed context and individual organism context editing.
+- `Report`: One-click LLM report of the current ecology, English first and Chinese second.
+- `Log`: Full event stream.
+
+Top status cards include:
+
+- `tick`: Current simulation time.
+- `active`: Living organism count.
+- `lineages`: Current lineage count.
+- `diversity`: Lineage evenness.
+- `integrity`: Average runnable integrity.
+- `cell energy`: Global resource field.
+- `LLM tokens`: Accumulated model tokens.
+- `cache hit`: Prompt cache hit rate reported by compatible endpoints such as DeepSeek.
+
+## Run Artifacts
+
+Clicking `Export Run` writes:
+
+```text
+runs/<run_id>/
+  events.jsonl
+  history.csv
+  lineage.csv
+  final_world.json
+  summary.json
+```
+
+Use these files to review ecological history, plot outcomes, compare parameter settings, or reload the final world into the observer.
+
+## Agent Modes
+
+- `llm_json`: Default LLM mode with batched concurrent requests and JSON action parsing.
+- `rule`: Deterministic rule-agent mode, useful for fast ecological tests.
+- `json_rule`: Serializes rule actions as JSON and parses them again, useful for testing the action parser.
+- `prompt_preview`: Does not call the LLM; writes future messages to each organism's `last_prompt.txt`.
+- `passive`: Organisms only wait, useful as a control condition.
+
+## Design Goal
+
+Context Genome is not a traditional resource-management game. It is an editable mind terrarium:
+
+- The researcher can inspect each organism's context.
+- Context can inherit, mutate, steal, reflect, and be manually edited.
+- The base model is treated as a mostly homogeneous understanding substrate; behavioral differences are intended to arise from contextual constraints.
+- The model does not start from scratch each turn; it carries continuity, self-narrative, and behavioral constraints through short dialogue history and its context genome.
+- The world uses resources, risk, competition, and feedback to select which contexts survive.
+
+The long-term goal is to observe a tiny form of LLM methodology evolution: not parameter training, but context growing, copying, and being selected under ecological pressure.

@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Context Genome</title>
+    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css?v=20260425-logo" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="identity">
+          <img class="brand-mark" src="/logo.svg" alt="" aria-hidden="true" />
+          <div class="brand-copy">
+            <h1>Context Genome</h1>
+            <p id="ecologyLabel">LLM evolution sandbox</p>
+          </div>
+        </div>
+        <div class="run-controls" aria-label="Simulation controls">
+          <label>
+            Ecology
+            <select id="presetSelect"></select>
+          </label>
+          <label>
+            Seed
+            <input id="seedInput" type="number" value="7" />
+          </label>
+          <label>
+            Agent
+            <select id="agentModeSelect"></select>
+          </label>
+          <button id="resetBtn" type="button">Reset</button>
+          <button id="stepBtn" type="button">Step</button>
+          <button id="playBtn" type="button">Play</button>
+          <label>
+            Ticks
+            <input id="speedInput" type="range" min="1" max="20" value="3" />
+            <output id="speedValue">3</output>
+          </label>
+          <button id="exportBtn" type="button">Export Run</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="world-pane" aria-label="World observer">
+          <div class="stat-strip" aria-label="World status">
+            <div class="stat-card"><span id="tickStat">0</span><small>tick</small><em id="tickSub">ready</em></div>
+            <div class="stat-card"><span id="popStat">0</span><small>active</small><em id="popSub">0 corpses</em></div>
+            <div class="stat-card"><span id="lineageStat">0</span><small>lineages</small><em id="lineageSub">0 births</em></div>
+            <div class="stat-card"><span id="diversityStat">0.00</span><small>diversity</small><em id="diversitySub">evenness</em></div>
+            <div class="stat-card"><span id="integrityStat">0%</span><small>integrity</small><em id="integritySub">stable</em></div>
+            <div class="stat-card"><span id="energyStat">0</span><small>cell energy</small><em id="energySub">avg 0</em></div>
+            <div class="stat-card"><span id="tokenStat">0</span><small>LLM tokens</small><em id="tokenSub">0 pending</em></div>
+            <div class="stat-card"><span id="cacheHitStat">0%</span><small>cache hit</small><em id="cacheSub">recent</em></div>
+          </div>
+
+          <div class="grid-head">
+            <div>
+              <h2>World Grid</h2>
+              <span id="gridSummary">0 occupied cells</span>
+            </div>
+            <div class="grid-legend" aria-label="Grid legend">
+              <span><i class="legend-energy"></i>energy</span>
+              <span><i class="legend-lineage"></i>lineage</span>
+              <span><i class="legend-dot"></i>organism</span>
+              <span><i class="legend-corpse"></i>corpse</span>
+              <span><i class="legend-event legend-event-birth">+</i>birth/copy</span>
+              <span><i class="legend-event legend-event-move">M</i>move</span>
+              <span><i class="legend-event legend-event-death">x</i>death/disaster</span>
+              <span><i class="legend-event legend-event-skill">S</i>steal</span>
+              <span><i class="legend-event legend-event-skill">*</i>reflect</span>
+              <span><i class="legend-event legend-event-care">R</i>repair/protect</span>
+            </div>
+          </div>
+
+          <div id="grid" class="world-grid" aria-label="World grid"></div>
+        </section>
+
+        <aside class="side-pane" aria-label="Researcher workspace">
+          <div class="tabbar" role="tablist" aria-label="Workspace sections">
+            <button id="tabObserve" class="is-active" type="button" role="tab" aria-selected="true" aria-controls="panelObserve" data-tab="observe">Observe</button>
+            <button id="tabTune" type="button" role="tab" aria-selected="false" aria-controls="panelTune" data-tab="tune">Tune</button>
+            <button id="tabCell" type="button" role="tab" aria-selected="false" aria-controls="panelCell" data-tab="cell">Cell</button>
+            <button id="tabEdit" type="button" role="tab" aria-selected="false" aria-controls="panelEdit" data-tab="edit">Edit</button>
+            <button id="tabReport" type="button" role="tab" aria-selected="false" aria-controls="panelReport" data-tab="report">Report</button>
+            <button id="tabLog" type="button" role="tab" aria-selected="false" aria-controls="panelLog" data-tab="log">Log</button>
+          </div>
+
+          <section id="panelObserve" class="tab-panel is-active" role="tabpanel" aria-labelledby="tabObserve" data-tab-panel="observe">
+            <section class="summary-pane" aria-label="World summary">
+              <section class="panel narrative-panel">
+                <div class="panel-head">
+                  <h2>World Summary</h2>
+                  <span id="summaryMode">live</span>
+                </div>
+                <p id="summaryLead" class="summary-lead">Waiting for the first tick.</p>
+                <div id="summaryBullets" class="summary-bullets"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Signals</h2>
+                  <span id="signalCount">0</span>
+                </div>
+                <div id="signalList" class="signal-list"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h2>Last Actions</h2>
+                  <span id="actionSummaryCount">0</span>
+                </div>
+                <div id="actionSummary" class="action-summary"></div>
+              </section>
+              <div class="lower-grid">
+                <section class="panel lineage-panel">
+                  <div class="panel-head">
+                    <h2>Lineages</h2>
+                    <span id="birthDeathStat"></span>
+                  </div>
+                  <div id="lineageList" class="lineage-list"></div>
+                </section>
+                <section class="panel chart-panel">
+                  <div class="panel-head">
+                    <h2>Population Trace</h2>
+                    <span id="scheduledStat"></span>
+                  </div>
+                  <canvas id="historyChart" width="640" height="210"></canvas>
+                </section>
+              </div>
+            </section>
+          </section>
+
+          <section id="panelTune" class="tab-panel" role="tabpanel" aria-labelledby="tabTune" data-tab-panel="tune" hidden>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>World Setup</h2>
+                <span>reset</span>
+              </div>
+              <div class="setup-grid">
+                <label>
+                  <span>Width <output id="widthValue">16</output></span>
+                  <input id="widthInput" type="range" min="8" max="24" step="1" value="16" />
+                </label>
+                <label>
+                  <span>Height <output id="heightValue">16</output></span>
+                  <input id="heightInput" type="range" min="8" max="24" step="1" value="16" />
+                </label>
+                <label>
+                  <span>Cell energy <output id="initialCellEnergyValue">80</output></span>
+                  <input id="initialCellEnergyInput" type="range" min="20" max="180" step="5" value="80" />
+                </label>
+                <label>
+                  <span>Mineral <output id="initialCellMineralValue">40</output></span>
+                  <input id="initialCellMineralInput" type="range" min="0" max="120" step="5" value="40" />
+                </label>
+                <label>
+                  <span>Radiation <output id="radiationValue">0.003</output></span>
+                  <input id="radiationInput" type="range" min="0" max="0.05" step="0.001" value="0.003" />
+                </label>
+                <label>
+                  <span>Initial orgs <output id="initialOrgsValue">6</output></span>
+                  <input id="initialOrgsInput" type="range" min="0" max="64" step="1" value="6" />
+                </label>
+                <label>
+                  <span>Org energy <output id="initialOrgEnergyValue">42</output></span>
+                  <input id="initialOrgEnergyInput" type="range" min="5" max="120" step="1" value="42" />
+                </label>
+                <label>
+                  <span>Per cell <output id="maxActivePerCellValue">4</output></span>
+                  <input id="maxActivePerCellInput" type="range" min="1" max="8" step="1" value="4" />
+                </label>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Ecology Controls</h2>
+              </div>
+              <div class="control-sliders">
+                <label>
+                  <span>Conflict <output id="conflictValue">off</output></span>
+                  <input id="conflictToggle" type="range" min="0" max="1" step="1" value="0" />
+                </label>
+                <label>
+                  <span>Delete <output id="deleteValue">off</output></span>
+                  <input id="deleteToggle" type="range" min="0" max="1" step="1" value="0" />
+                </label>
+                <label>
+                  <span>Mutation <output id="mutationValue">0%</output></span>
+                  <input id="mutationToggle" type="range" min="0" max="5" step="0.1" value="0" />
+                </label>
+                <label>
+                  <span>Disasters <output id="disasterValue">0%</output></span>
+                  <input id="disasterToggle" type="range" min="0" max="20" step="0.5" value="0" />
+                </label>
+                <label>
+                  <span>Regen <output id="regenValue">6.0</output></span>
+                  <input id="regenInput" type="range" min="0" max="12" step="0.25" value="6" />
+                </label>
+                <label>
+                  <span>Maintenance <output id="maintenanceValue">1.0</output></span>
+                  <input id="maintenanceInput" type="range" min="0.1" max="3" step="0.05" value="1" />
+                </label>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2>LLM Runtime</h2>
+                <span id="llmRuntimeStatus">checking</span>
+              </div>
+              <div class="llm-controls">
+                <label>
+                  Model
+                  <input id="llmModelInput" placeholder="env CONTEXT_GENOME_LLM_MODEL" />
+                </label>
+                <label>
+                  Calls / tick
+                  <output id="llmCapValue">8</output>
+                  <input id="llmCapInput" type="range" min="0" max="64" step="1" value="8" />
+                </label>
+                <label>
+                  Temperature
+                  <output id="llmTempValue">0.2</output>
+                  <input id="llmTempInput" type="range" min="0" max="2" step="0.05" value="0.2" />
+                </label>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Run Artifacts</h2>
+                <span id="exportStatus">not exported</span>
+              </div>
+              <div class="artifact-controls">
+                <select id="runSelect"></select>
+                <button id="loadRunBtn" type="button">Load Final</button>
+              </div>
+              <p id="artifactHint" class="hint">Exports are saved under the local runs directory.</p>
+            </section>
+          </section>
+
+          <section id="panelCell" class="tab-panel" role="tabpanel" aria-labelledby="tabCell" data-tab-panel="cell" hidden>
+            <section class="panel">
+              <div class="panel-head">
+                <h2 id="cellTitle">Cell 00_00</h2>
+                <span id="cellMeta"></span>
+              </div>
+              <div id="cellOrganisms" class="org-list"></div>
+            </section>
+          </section>
+
+          <section id="panelEdit" class="tab-panel" role="tabpanel" aria-labelledby="tabEdit" data-tab-panel="edit" hidden>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Seed Context</h2>
+                <select id="seedTemplate"></select>
+              </div>
+              <textarea id="seedText" spellcheck="false"></textarea>
+              <div class="editor-actions">
+                <input id="spawnLabel" value="Researcher Context" />
+                <button id="spawnBtn" type="button">Spawn Here</button>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2 id="orgTitle">Organism</h2>
+                <span id="orgMeta">none selected</span>
+              </div>
+              <textarea id="skillEditor" spellcheck="false" placeholder="Select an organism to edit its context genome"></textarea>
+              <div class="editor-actions">
+                <button id="saveSkillBtn" type="button">Save Context</button>
+                <button id="removeOrgBtn" class="danger" type="button">Remove</button>
+              </div>
+            </section>
+          </section>
+
+          <section id="panelReport" class="tab-panel" role="tabpanel" aria-labelledby="tabReport" data-tab-panel="report" hidden>
+            <section class="panel report-panel">
+              <div class="panel-head">
+                <h2>Ecology Report</h2>
+                <span id="reportStatus">ready</span>
+              </div>
+              <p class="hint">One-shot LLM summary of the current world. The report is generated in English first, then Chinese, and includes the leading lineage's context genome.</p>
+              <div class="report-actions">
+                <button id="reportBtn" class="primary" type="button">Generate Report</button>
+              </div>
+              <article id="reportOutput" class="report-output">No report generated yet.</article>
+            </section>
+          </section>
+
+          <section id="panelLog" class="tab-panel" role="tabpanel" aria-labelledby="tabLog" data-tab-panel="log" hidden>
+            <section class="panel event-panel">
+              <div class="panel-head">
+                <h2>Events</h2>
+                <span id="eventCount"></span>
+              </div>
+              <div id="eventLog" class="event-log"></div>
+            </section>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="/app.js?v=20260425-context-genome"></script>
+  </body>
+</html>
