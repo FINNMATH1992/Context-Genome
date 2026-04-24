@@ -4,6 +4,8 @@ English | [中文](README.zh-CN.md)
 
 Author: FINNMATH1992
 
+Description: A browser-based LLM context evolution sandbox for studying how editable context genomes shape agent behavior under resource, competition, mutation, and selection pressure.
+
 <p align="center">
   <img src="docs/images/context-genome-logo.svg" alt="Context Genome logo" width="160" />
 </p>
@@ -229,3 +231,7 @@ Context Genome is not a traditional resource-management game. It is an editable 
 - The world uses resources, risk, competition, and feedback to select which contexts survive.
 
 The long-term goal is to observe a tiny form of LLM methodology evolution: not parameter training, but context growing, copying, and being selected under ecological pressure.
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
