@@ -26,6 +26,10 @@ const ui = {
   regenInput: $("#regenInput"),
   maintenanceInput: $("#maintenanceInput"),
   llmModelInput: $("#llmModelInput"),
+  llmBaseUrlInput: $("#llmBaseUrlInput"),
+  llmApiKeyInput: $("#llmApiKeyInput"),
+  saveRuntimeBtn: $("#saveRuntimeBtn"),
+  clearRuntimeKeyBtn: $("#clearRuntimeKeyBtn"),
   llmCapInput: $("#llmCapInput"),
   llmTokenBudgetInput: $("#llmTokenBudgetInput"),
   llmTempInput: $("#llmTempInput"),
@@ -98,6 +102,8 @@ function fillPresetControls() {
     ui.agentModeSelect.append(option);
   });
   ui.llmModelInput.value = presets.llm_runtime?.model || "";
+  ui.llmBaseUrlInput.value = presets.llm_runtime?.base_url || "";
+  ui.llmApiKeyInput.value = "";
   renderLlmStatus();
   fillSeedTemplates("sandbox");
 }
@@ -133,6 +139,10 @@ function bindEvents() {
 
   ui.llmModelInput.addEventListener("input", renderLlmStatus);
   ui.llmModelInput.addEventListener("change", applyLiveConfig);
+  ui.llmBaseUrlInput.addEventListener("input", renderLlmStatus);
+  ui.llmApiKeyInput.addEventListener("input", renderLlmStatus);
+  ui.saveRuntimeBtn.addEventListener("click", () => saveLlmRuntime(false));
+  ui.clearRuntimeKeyBtn.addEventListener("click", () => saveLlmRuntime(true));
 
   ui.resetBtn.addEventListener("click", async () => {
     stopPlaying();
@@ -366,9 +376,12 @@ function renderLlmStatus() {
   const runtime = presets?.llm_runtime || {};
   const hasKey = Boolean(runtime.has_api_key);
   const hasModel = Boolean(ui.llmModelInput.value.trim() || runtime.model);
+  const hasUnsavedKey = Boolean(ui.llmApiKeyInput.value.trim());
   const status = $("#llmRuntimeStatus");
   if (hasKey && hasModel) {
     status.textContent = "configured";
+  } else if (hasUnsavedKey && hasModel) {
+    status.textContent = "save key";
   } else if (!hasKey && !hasModel) {
     status.textContent = "missing key + model";
   } else if (!hasKey) {
@@ -376,6 +389,8 @@ function renderLlmStatus() {
   } else {
     status.textContent = "missing model";
   }
+  ui.llmApiKeyInput.placeholder = hasKey ? "stored; paste new key to replace" : "paste key to save in memory";
+  $("#runtimeSecretStatus").textContent = hasKey ? "key available / hidden" : "key not saved";
 }
 
 async function tick(steps = 1) {
@@ -397,6 +412,39 @@ async function applyLiveConfig() {
   if (busy || !state) return;
   state = await api("/api/config", { overrides: liveOverrides() });
   renderState();
+}
+
+async function saveLlmRuntime(clearKey = false) {
+  if (busy || !state) return;
+  busy = true;
+  ui.saveRuntimeBtn.disabled = true;
+  ui.clearRuntimeKeyBtn.disabled = true;
+  $("#runtimeSecretStatus").textContent = clearKey ? "clearing" : "saving";
+  try {
+    const result = await api("/api/llm_runtime", {
+      base_url: ui.llmBaseUrlInput.value.trim(),
+      api_key: clearKey ? "" : ui.llmApiKeyInput.value.trim(),
+      clear_api_key: clearKey,
+      overrides: liveOverrides(),
+    });
+    if (result.llm_runtime) {
+      presets.llm_runtime = result.llm_runtime;
+      ui.llmBaseUrlInput.value = result.llm_runtime.base_url || ui.llmBaseUrlInput.value.trim();
+    }
+    if (result.state) {
+      state = result.state;
+    }
+    ui.llmApiKeyInput.value = "";
+    renderLlmStatus();
+    renderState();
+  } catch (error) {
+    $("#llmRuntimeStatus").textContent = "save failed";
+    $("#runtimeSecretStatus").textContent = error.message;
+  } finally {
+    ui.saveRuntimeBtn.disabled = false;
+    ui.clearRuntimeKeyBtn.disabled = false;
+    busy = false;
+  }
 }
 
 async function generateReport() {

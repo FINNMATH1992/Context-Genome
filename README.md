@@ -105,6 +105,8 @@ export CONTEXT_GENOME_LLM_MODEL="deepseek-v4-flash"
 export CONTEXT_GENOME_LLM_BASE_URL="https://api.deepseek.com/v1"
 ```
 
+You can also add or replace the Base URL and API key in `Tune -> LLM Runtime` after the server has started. Runtime keys are kept only in server memory. The browser never receives the key back; after saving, the input is cleared and the UI only shows whether a key is available.
+
 For DeepSeek-compatible endpoints, requests disable thinking by default:
 
 ```json

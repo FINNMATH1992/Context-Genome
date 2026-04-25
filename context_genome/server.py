@@ -12,7 +12,7 @@ from typing import Any, Dict
 from urllib.parse import parse_qs, urlparse
 
 from .agents import AGENT_MODES
-from .agents.drivers import LLMDriverError, _call_chat_completion, _llm_runtime, llm_runtime_status
+from .agents.drivers import LLMDriverError, _call_chat_completion, _llm_runtime, llm_runtime_status, update_llm_runtime_overrides
 from .engine import ContextGenomeWorld, get_preset
 from .engine.exporter import list_runs, load_run, save_run
 from .engine.presets import PRESET_SEEDS, PRESETS, FORAGER_SKILL
@@ -117,6 +117,27 @@ class GenomeHandler(BaseHTTPRequestHandler):
                 overrides = body.get("overrides") if isinstance(body.get("overrides"), dict) else {}
                 world.update_config(overrides)
                 self._send_json(world.snapshot())
+                return
+            if path == "/api/llm_runtime":
+                overrides = body.get("overrides") if isinstance(body.get("overrides"), dict) else {}
+                world.update_config(overrides)
+                if getattr(world, "decision_batch", None) is not None:
+                    cancel_batch = getattr(world.agent_driver, "cancel_batch", None)
+                    if callable(cancel_batch):
+                        cancel_batch(world.decision_batch)
+                    world.decision_batch = None
+                    world.record_event(
+                        "llm",
+                        "cancelled pending LLM batch after runtime credential change",
+                        severity="warn",
+                    )
+                runtime = update_llm_runtime_overrides(
+                    api_key=str(body.get("api_key") or ""),
+                    base_url=str(body.get("base_url") or ""),
+                    clear_api_key=bool(body.get("clear_api_key")),
+                    config_model=world.config.llm_model,
+                )
+                self._send_json({"ok": True, "llm_runtime": runtime, "state": world.snapshot()})
                 return
             if path == "/api/spawn":
                 x = int(body.get("x", 0))

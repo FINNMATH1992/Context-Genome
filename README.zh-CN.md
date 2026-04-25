@@ -105,6 +105,8 @@ export CONTEXT_GENOME_LLM_MODEL="deepseek-v4-flash"
 export CONTEXT_GENOME_LLM_BASE_URL="https://api.deepseek.com/v1"
 ```
 
+服务启动后，也可以在 `Tune -> LLM Runtime` 里补充或替换 Base URL 和 API key。运行时 key 只保存在服务端内存中，浏览器不会收到 key 原文；保存后输入框会被清空，界面只显示是否已有可用 key。
+
 DeepSeek 端点默认会发送：
 
 ```json

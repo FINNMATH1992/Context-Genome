@@ -215,6 +215,19 @@
                   <input id="llmModelInput" placeholder="env CONTEXT_GENOME_LLM_MODEL" />
                 </label>
                 <label>
+                  Base URL
+                  <input id="llmBaseUrlInput" placeholder="https://api.openai.com/v1" />
+                </label>
+                <label>
+                  API key
+                  <input id="llmApiKeyInput" type="password" autocomplete="off" placeholder="paste key to save in memory" />
+                </label>
+                <div class="runtime-actions">
+                  <button id="saveRuntimeBtn" type="button">Save Runtime</button>
+                  <button id="clearRuntimeKeyBtn" type="button">Clear Key</button>
+                  <span id="runtimeSecretStatus">key not saved</span>
+                </div>
+                <label>
                   Calls / tick
                   <output id="llmCapValue">8</output>
                   <input id="llmCapInput" type="range" min="0" max="64" step="1" value="8" />

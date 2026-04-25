@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import urllib.error
 import urllib.request
 from hashlib import sha1
@@ -216,6 +217,8 @@ class LLMBatch:
 
 
 _LLM_EXECUTOR = ThreadPoolExecutor(max_workers=8, thread_name_prefix="skill-garden-llm")
+_RUNTIME_OVERRIDE_LOCK = threading.RLock()
+_RUNTIME_OVERRIDES: Dict[str, str] = {}
 PROMPT_STATE_FILE = "prompt_state.json"
 DIALOGUE_HISTORY_LIMIT = 16
 DIALOGUE_CONTENT_LIMIT = 4096
@@ -569,15 +572,44 @@ def llm_runtime_status(config_model: str = "") -> dict:
     }
 
 
+def update_llm_runtime_overrides(
+    *,
+    api_key: str | None = None,
+    base_url: str | None = None,
+    clear_api_key: bool = False,
+    config_model: str = "",
+) -> dict:
+    with _RUNTIME_OVERRIDE_LOCK:
+        if clear_api_key:
+            _RUNTIME_OVERRIDES.pop("api_key", None)
+        elif api_key is not None and api_key.strip():
+            _RUNTIME_OVERRIDES["api_key"] = api_key.strip()
+        if base_url is not None:
+            clean_base = base_url.strip().rstrip("/")
+            if clean_base:
+                _RUNTIME_OVERRIDES["base_url"] = clean_base
+            else:
+                _RUNTIME_OVERRIDES.pop("base_url", None)
+    return llm_runtime_status(config_model)
+
+
+def _runtime_overrides() -> Dict[str, str]:
+    with _RUNTIME_OVERRIDE_LOCK:
+        return dict(_RUNTIME_OVERRIDES)
+
+
 def _llm_runtime(config_model: str = "") -> dict:
+    overrides = _runtime_overrides()
     api_key = (
-        os.environ.get("CONTEXT_GENOME_LLM_API_KEY")
+        overrides.get("api_key")
+        or os.environ.get("CONTEXT_GENOME_LLM_API_KEY")
         or os.environ.get("SKILL_GARDEN_LLM_API_KEY")
         or os.environ.get("OPENAI_API_KEY")
         or ""
     )
     base_url = (
-        os.environ.get("CONTEXT_GENOME_LLM_BASE_URL")
+        overrides.get("base_url")
+        or os.environ.get("CONTEXT_GENOME_LLM_BASE_URL")
         or os.environ.get("SKILL_GARDEN_LLM_BASE_URL")
         or os.environ.get("OPENAI_BASE_URL")
         or "https://api.openai.com/v1"

@@ -866,6 +866,19 @@ textarea {
   padding: 0 8px;
 }
 
+.runtime-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 2px 0 6px;
+}
+
+.runtime-actions span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 input[type="range"] {
   appearance: none;
   -webkit-appearance: none;
