@@ -55,6 +55,24 @@ If the port is busy, use another one:
 python -m context_genome.server --host 127.0.0.1 --port 8777
 ```
 
+Optional editable install:
+
+```bash
+python -m pip install -e .
+context-genome --host 127.0.0.1 --port 8765
+```
+
+Development checks:
+
+```bash
+python -B -m compileall context_genome skill_garden
+python -B -m unittest discover -s tests
+node --check context_genome/web/app.js
+python -B scripts/check_repository_hygiene.py
+```
+
+The GitHub Actions workflow runs the same checks on push and pull request.
+
 ## Connect An LLM
 
 The browser defaults to `LLM JSON` mode. The server calls an OpenAI-compatible `/chat/completions` endpoint and parses the returned JSON action.

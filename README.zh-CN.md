@@ -55,6 +55,24 @@ http://127.0.0.1:8765
 python -m context_genome.server --host 127.0.0.1 --port 8777
 ```
 
+也可以 editable install：
+
+```bash
+python -m pip install -e .
+context-genome --host 127.0.0.1 --port 8765
+```
+
+开发检查：
+
+```bash
+python -B -m compileall context_genome skill_garden
+python -B -m unittest discover -s tests
+node --check context_genome/web/app.js
+python -B scripts/check_repository_hygiene.py
+```
+
+GitHub Actions 会在 push 和 pull request 时自动运行同一组检查。
+
 ## 接入大模型
 
 默认界面已经使用 `LLM JSON` 模式。服务端会调用 OpenAI-compatible `/chat/completions` 接口，解析模型返回的严格 JSON 动作。

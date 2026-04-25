@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Compile Python
+        run: python -B -m compileall context_genome skill_garden
+
+      - name: Run unit tests
+        run: python -B -m unittest discover -s tests
+
+      - name: Check frontend syntax
+        run: node --check context_genome/web/app.js
+
+      - name: Check repository hygiene
+        run: python -B scripts/check_repository_hygiene.py
