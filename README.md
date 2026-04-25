@@ -40,7 +40,7 @@ This is also a cost-oriented question. Maintaining, copying, mutating, and selec
 Context Genome currently uses only the Python standard library. Run it from the project root with Python 3.11 or newer:
 
 ```bash
-python -m context_genome.server --host 127.0.0.1 --port 8765
+./run.sh
 ```
 
 Open:
@@ -52,8 +52,10 @@ http://127.0.0.1:8765
 If the port is busy, use another one:
 
 ```bash
-python -m context_genome.server --host 127.0.0.1 --port 8777
+./run.sh --port 8777
 ```
+
+`run.sh` also accepts `CONTEXT_GENOME_HOST` and `CONTEXT_GENOME_PORT`, and maps common `OPENAI_*` or legacy `SKILL_GARDEN_LLM_*` variables into the project-specific `CONTEXT_GENOME_LLM_*` names for the launched process.
 
 Optional editable install:
 
@@ -79,7 +81,7 @@ You can run Context Genome directly in GitHub Codespaces:
 
 [Open in GitHub Codespaces](https://codespaces.new/FINNMATH1992/Context-Genome?quickstart=1)
 
-The dev container installs the package, starts the server on port `8765`, and asks Codespaces to forward that port as `Context Genome`. When the browser preview opens, add the model Base URL and API key in `Tune -> LLM Runtime`; the key is stored only in server memory and is not committed.
+The dev container installs the package, starts `./run.sh --host 0.0.0.0 --port 8765`, and asks Codespaces to forward that port as `Context Genome`. When the browser preview opens, add the model Base URL and API key in `Tune -> LLM Runtime`; the key is stored only in server memory and is not committed.
 
 ## Connect An LLM
 

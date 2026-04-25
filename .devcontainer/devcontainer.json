@@ -14,7 +14,7 @@
     }
   },
   "postCreateCommand": "python -m pip install -e .",
-  "postStartCommand": "sh -lc 'if ! pgrep -f \"context_genome.server --host 0.0.0.0 --port 8765\" >/dev/null; then nohup python -B -m context_genome.server --host 0.0.0.0 --port 8765 >/tmp/context-genome.log 2>&1 & fi'",
+  "postStartCommand": "sh -lc 'if ! pgrep -f \"context_genome.server --host 0.0.0.0 --port 8765\" >/dev/null; then nohup ./run.sh --host 0.0.0.0 --port 8765 >/tmp/context-genome.log 2>&1 & fi'",
   "customizations": {
     "vscode": {
       "extensions": [
