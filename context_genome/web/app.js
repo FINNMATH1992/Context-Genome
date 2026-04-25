@@ -27,6 +27,7 @@ const ui = {
   maintenanceInput: $("#maintenanceInput"),
   llmModelInput: $("#llmModelInput"),
   llmCapInput: $("#llmCapInput"),
+  llmTokenBudgetInput: $("#llmTokenBudgetInput"),
   llmTempInput: $("#llmTempInput"),
   seedTemplate: $("#seedTemplate"),
   seedText: $("#seedText"),
@@ -175,6 +176,7 @@ function bindEvents() {
     ui.regenInput,
     ui.maintenanceInput,
     ui.llmCapInput,
+    ui.llmTokenBudgetInput,
     ui.llmTempInput,
   ].forEach((input) => {
     input.addEventListener("input", renderControlValues);
@@ -284,6 +286,7 @@ function liveOverrides() {
     llm_model: ui.llmModelInput.value.trim(),
     llm_temperature: Number(ui.llmTempInput.value || 0.2),
     max_llm_calls_per_tick: Number(ui.llmCapInput.value || 8),
+    llm_token_budget: Number(ui.llmTokenBudgetInput.value || 0),
   };
 }
 
@@ -308,6 +311,7 @@ function syncSwitchesFromState() {
   ui.llmModelInput.value = state.config.llm_model || presets.llm_runtime?.model || "";
   ui.llmTempInput.value = state.config.llm_temperature ?? 0.2;
   ui.llmCapInput.value = state.config.max_llm_calls_per_tick ?? 8;
+  ui.llmTokenBudgetInput.value = state.config.llm_token_budget ?? 10000000;
   renderLlmStatus();
   renderControlValues();
   fillSeedTemplates(state.config.name);
@@ -328,6 +332,7 @@ function applyConfigToControls(config) {
   ui.initialOrgsInput.value = config.initial_orgs ?? 6;
   ui.initialOrgEnergyInput.value = config.initial_org_energy ?? 42;
   ui.maxActivePerCellInput.value = config.max_active_per_cell ?? 4;
+  ui.llmTokenBudgetInput.value = config.llm_token_budget ?? 10000000;
   renderControlValues();
 }
 
@@ -353,6 +358,7 @@ function renderControlValues() {
   $("#regenValue").textContent = Number(ui.regenInput.value || 0).toFixed(2);
   $("#maintenanceValue").textContent = Number(ui.maintenanceInput.value || 0).toFixed(2);
   $("#llmCapValue").textContent = ui.llmCapInput.value;
+  $("#llmTokenBudgetValue").textContent = formatBudgetLabel(Number(ui.llmTokenBudgetInput.value || 0));
   $("#llmTempValue").textContent = Number(ui.llmTempInput.value || 0).toFixed(2);
 }
 
@@ -420,6 +426,10 @@ async function generateReport() {
 }
 
 function startPlaying() {
+  if (isTokenBudgetExhausted()) {
+    renderState();
+    return;
+  }
   playing = true;
   ui.playBtn.textContent = "Pause";
   ui.playBtn.classList.add("is-playing");
@@ -449,7 +459,17 @@ function renderState() {
   $("#diversityStat").textContent = state.stats.diversity.toFixed(2);
   $("#integrityStat").textContent = `${Math.round(state.stats.avg_integrity * 100)}%`;
   $("#energyStat").textContent = Math.round(state.stats.total_cell_energy);
-  $("#tickSub").textContent = state.stats.llm_pending ? `${state.stats.llm_pending} pending` : playing ? "playing" : "ready";
+  const tokenBudgetExhausted = isTokenBudgetExhausted();
+  if (tokenBudgetExhausted && playing) {
+    stopPlaying();
+  }
+  $("#tickSub").textContent = tokenBudgetExhausted
+    ? "token budget reached"
+    : state.stats.llm_pending
+      ? `${state.stats.llm_pending} pending`
+      : playing
+        ? "playing"
+        : "ready";
   $("#popSub").textContent = `${formatSigned(populationDelta)} in window / ${state.stats.corpses} corpses`;
   $("#lineageSub").textContent = `${state.stats.births} births / ${state.stats.deaths} deaths`;
   $("#diversitySub").textContent = `${occupiedCells} occupied cells`;
@@ -466,9 +486,20 @@ function renderState() {
   const recentCacheMissTokens = recentUsage.reduce((sum, usage) => sum + (usage.prompt_cache_miss_tokens || 0), 0);
   const recentCacheTotalTokens = recentCacheHitTokens + recentCacheMissTokens;
   const recentCacheHitRate = recentCacheTotalTokens > 0 ? recentCacheHitTokens / recentCacheTotalTokens : cacheHitRate;
-  $("#tokenStat").textContent = formatCompactNumber(state.stats.llm_total_tokens || 0);
-  $("#tokenStat").title = `${state.stats.llm_pending || 0} pending / ${formatCompactNumber(cacheHitTokens)} cache hit / ${formatCompactNumber(cacheMissTokens)} cache miss`;
-  $("#tokenSub").textContent = `${state.stats.llm_pending || 0} pending`;
+  const tokenBudget = state.stats.llm_token_budget || state.config.llm_token_budget || 0;
+  const totalTokens = state.stats.llm_total_tokens || 0;
+  const budgetPercent = tokenBudget > 0 ? Math.min(100, Math.round((totalTokens / tokenBudget) * 100)) : 0;
+  $("#tokenStat").textContent = formatCompactNumber(totalTokens);
+  $("#tokenStat").title = `${state.stats.llm_pending || 0} pending / ${formatCompactNumber(cacheHitTokens)} cache hit / ${formatCompactNumber(cacheMissTokens)} cache miss / budget ${tokenBudget ? formatCompactNumber(tokenBudget) : "off"}`;
+  $("#tokenSub").textContent = tokenBudgetExhausted
+    ? `budget ${formatCompactNumber(tokenBudget)} reached`
+    : tokenBudget > 0
+      ? `${budgetPercent}% of ${formatCompactNumber(tokenBudget)}${state.stats.llm_pending ? ` / ${state.stats.llm_pending} pending` : ""}`
+      : `${state.stats.llm_pending || 0} pending`;
+  if (ui.reportBtn) {
+    ui.reportBtn.disabled = tokenBudgetExhausted;
+    ui.reportBtn.title = tokenBudgetExhausted ? "Raise the token budget to generate another LLM report." : "";
+  }
   $("#cacheHitStat").textContent = recentCacheTotalTokens > 0 ? `${Math.round(recentCacheHitRate * 100)}%` : "0%";
   $("#cacheHitStat").title = `recent ${formatCompactNumber(recentCacheHitTokens)} hit / ${formatCompactNumber(recentCacheMissTokens)} miss; lifetime ${Math.round(cacheHitRate * 100)}%`;
   $("#cacheSub").textContent = `life ${Math.round(cacheHitRate * 100)}%`;
@@ -1116,6 +1147,18 @@ function formatCompactNumber(value) {
   if (number >= 10_000) return `${Math.round(number / 1000)}K`;
   if (number >= 1000) return `${(number / 1000).toFixed(1)}K`;
   return String(Math.round(number));
+}
+
+function formatBudgetLabel(value) {
+  const number = Number(value || 0);
+  return number > 0 ? formatCompactNumber(number) : "off";
+}
+
+function isTokenBudgetExhausted() {
+  return Boolean(
+    state?.config?.agent_mode === "llm_json" &&
+      state?.stats?.llm_token_budget_exhausted,
+  );
 }
 
 function formatSigned(value) {

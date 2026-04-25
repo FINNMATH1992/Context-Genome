@@ -166,6 +166,17 @@ class GenomeHandler(BaseHTTPRequestHandler):
             timeout_seconds = float(world.config.llm_timeout_seconds)
             temperature = min(0.5, max(0.0, float(world.config.llm_temperature)))
 
+        if report_context.get("stats", {}).get("llm_token_budget_exhausted"):
+            self._send_json(
+                {
+                    "ok": False,
+                    "error": "llm token budget reached",
+                    "token_budget": report_context.get("stats", {}).get("llm_token_budget"),
+                    "total_tokens": report_context.get("stats", {}).get("llm_total_tokens"),
+                },
+                status=429,
+            )
+            return
         if not runtime["configured"]:
             self._send_json({"ok": False, "error": "llm not configured", "missing": runtime["missing"]}, status=400)
             return

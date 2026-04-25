@@ -38,6 +38,7 @@ class ContextGenomeWorld:
         self.history: List[dict] = []
         self.lineage_history: List[dict] = []
         self.llm_usage = self._empty_llm_usage()
+        self.llm_budget_exhausted_reported = False
         self.birth_count = 0
         self.death_count = 0
         self.lineage_births: Dict[str, int] = defaultdict(int)
@@ -294,7 +295,13 @@ class ContextGenomeWorld:
     def step(self, steps: int = 1) -> dict:
         steps = max(1, min(steps, 200))
         for _ in range(steps):
+            if self._llm_token_budget_exhausted() and getattr(self, "decision_batch", None) is None:
+                self._record_llm_budget_pause()
+                break
             self._step_once()
+            if self._llm_token_budget_exhausted() and getattr(self, "decision_batch", None) is None:
+                self._record_llm_budget_pause()
+                break
         return self.snapshot()
 
     def _step_once(self) -> None:
@@ -1484,15 +1491,23 @@ class ContextGenomeWorld:
             "llm_model",
             "llm_temperature",
             "max_llm_calls_per_tick",
+            "llm_token_budget",
         }
         batch_sensitive = {"agent_mode", "llm_model", "llm_temperature", "max_llm_calls_per_tick"}
         should_cancel_batch = False
+        budget_changed = False
         for key, value in (overrides or {}).items():
             if key in allowed and hasattr(self.config, key):
                 value = self._coerce_config_value(key, value)
                 if key in batch_sensitive and getattr(self.config, key) != value:
                     should_cancel_batch = True
+                if key == "llm_token_budget" and getattr(self.config, key) != value:
+                    budget_changed = True
                 setattr(self.config, key, value)
+        if budget_changed:
+            self.llm_budget_exhausted_reported = False
+            if self._llm_token_budget_exhausted():
+                should_cancel_batch = True
         if getattr(self, "decision_batch", None) is not None and should_cancel_batch:
             cancel_batch = getattr(self.agent_driver, "cancel_batch", None)
             if callable(cancel_batch):
@@ -1503,6 +1518,8 @@ class ContextGenomeWorld:
                 severity="warn",
             )
             self.decision_batch = None
+        if budget_changed and self._llm_token_budget_exhausted():
+            self._record_llm_budget_pause()
         self.agent_driver = get_agent_driver(self.config.agent_mode)
 
     def _coerce_config_value(self, key: str, value):
@@ -1510,6 +1527,8 @@ class ContextGenomeWorld:
             return bool(value)
         if key in {"max_llm_calls_per_tick"}:
             return max(0, min(64, int(float(value or 0))))
+        if key == "llm_token_budget":
+            return max(0, min(200_000_000, int(float(value or 0))))
         if key == "llm_temperature":
             return max(0.0, min(2.0, float(value or 0.0)))
         ranges = {
@@ -1542,7 +1561,34 @@ class ContextGenomeWorld:
         self.llm_usage["prompt_cache_miss_tokens"] += normalized["prompt_cache_miss_tokens"]
         if normalized["estimated"]:
             self.llm_usage["estimated_calls"] += 1
+        if self._llm_token_budget_exhausted():
+            self._record_llm_budget_pause()
         return normalized
+
+    def _llm_token_budget_exhausted(self) -> bool:
+        budget = max(0, int(getattr(self.config, "llm_token_budget", 0) or 0))
+        return budget > 0 and self.llm_usage["total_tokens"] >= budget
+
+    def _llm_token_budget_remaining(self) -> int:
+        budget = max(0, int(getattr(self.config, "llm_token_budget", 0) or 0))
+        if budget <= 0:
+            return 0
+        return max(0, budget - self.llm_usage["total_tokens"])
+
+    def _record_llm_budget_pause(self) -> None:
+        if self.llm_budget_exhausted_reported:
+            return
+        budget = max(0, int(getattr(self.config, "llm_token_budget", 0) or 0))
+        self.llm_budget_exhausted_reported = True
+        self.record_event(
+            "llm",
+            "LLM token budget reached; automatic play should pause",
+            severity="warn",
+            data={
+                "total_tokens": self.llm_usage["total_tokens"],
+                "token_budget": budget,
+            },
+        )
 
     def snapshot(self) -> dict:
         stats = self.stats()
@@ -1572,6 +1618,7 @@ class ContextGenomeWorld:
                 "llm_timeout_seconds": self.config.llm_timeout_seconds,
                 "llm_max_tokens": self.config.llm_max_tokens,
                 "max_llm_calls_per_tick": self.config.max_llm_calls_per_tick,
+                "llm_token_budget": self.config.llm_token_budget,
                 "width": self.config.world_width,
                 "height": self.config.world_height,
             },
@@ -1632,6 +1679,7 @@ class ContextGenomeWorld:
         world.history = list(payload.get("history") or [])
         world.lineage_history = list(payload.get("lineage_history") or [])
         world.llm_usage = cls._normalize_llm_usage(payload.get("llm_usage") or {})
+        world.llm_budget_exhausted_reported = False
         world.birth_count = int(payload.get("birth_count") or 0)
         world.death_count = int(payload.get("death_count") or 0)
         world.lineage_births = defaultdict(int, payload.get("lineage_births") or {})
@@ -1745,6 +1793,9 @@ class ContextGenomeWorld:
             "llm_estimated_calls": self.llm_usage["estimated_calls"],
             "llm_prompt_cache_hit_tokens": self.llm_usage["prompt_cache_hit_tokens"],
             "llm_prompt_cache_miss_tokens": self.llm_usage["prompt_cache_miss_tokens"],
+            "llm_token_budget": max(0, int(getattr(self.config, "llm_token_budget", 0) or 0)),
+            "llm_token_budget_remaining": self._llm_token_budget_remaining(),
+            "llm_token_budget_exhausted": self._llm_token_budget_exhausted(),
             "llm_pending": self._pending_decision_count(),
         }
 

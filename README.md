@@ -66,6 +66,7 @@ This sandbox can call the model many times. In `LLM JSON` mode, each scheduled o
 Practical defaults:
 
 - Keep `Calls / tick` modest while tuning a world.
+- Keep the `Token budget` guard enabled. It defaults to `10M` lifetime LLM tokens and automatically pauses continuous play when reached.
 - Use `Step` or short `Play` runs before leaving the ecology running.
 - Leave DeepSeek thinking disabled unless you are intentionally testing reasoning-heavy behavior.
 - Watch the `LLM tokens` and `cache hit` cards in the top status bar.
@@ -195,6 +196,7 @@ Top status cards include:
 - `integrity`: Average runnable integrity.
 - `cell energy`: Global resource field.
 - `LLM tokens`: Accumulated model tokens.
+- `Token budget`: Tuneable lifetime LLM token guard. The default is `10M`; continuous play pauses once the budget is reached.
 - `cache hit`: Prompt cache hit rate reported by compatible endpoints such as DeepSeek.
 
 ## Run Artifacts

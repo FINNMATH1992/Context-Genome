@@ -66,6 +66,7 @@ python -m context_genome.server --host 127.0.0.1 --port 8777
 实用建议：
 
 - 调世界参数时，把 `Calls / tick` 设得保守一些。
+- 保持 `Token budget` 保护开启。默认上限是 `10M` 生命周期 LLM tokens，达到后会自动暂停连续运行。
 - 先用 `Step` 或短时间 `Play` 观察，再长时间运行。
 - 除非专门测试深度推理行为，否则保持 DeepSeek thinking disabled。
 - 关注顶部状态栏里的 `LLM tokens` 和 `cache hit`。
@@ -199,6 +200,7 @@ assistant: 模型返回的动作 JSON
 - `integrity`: 平均可运行完整性。
 - `cell energy`: 全局资源量。
 - `LLM tokens`: 累计模型 token。
+- `Token budget`: 可调的生命周期 LLM token 保护。默认 `10M`，达到后连续运行会自动暂停。
 - `cache hit`: DeepSeek 等兼容端点返回的 prompt cache 命中率。
 
 ## 导出文件

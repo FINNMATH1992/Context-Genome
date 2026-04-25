@@ -51,6 +51,7 @@ class GardenConfig:
     llm_timeout_seconds: float = 20.0
     llm_max_tokens: int = 320
     max_llm_calls_per_tick: int = 8
+    llm_token_budget: int = 10_000_000
     ecology_label: str = "Sandbox ecology"
 
 
