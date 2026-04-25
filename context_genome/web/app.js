@@ -324,7 +324,7 @@ function bindEvents() {
     ui.llmCapInput,
     ui.llmTokenBudgetInput,
     ui.llmTempInput,
-  ].forEach((input) => {
+  ].filter(Boolean).forEach((input) => {
     input.addEventListener("input", renderControlValues);
     input.addEventListener("change", applyLiveConfig);
   });
@@ -396,12 +396,12 @@ function bindEvents() {
   });
 
   ui.reportBtn.addEventListener("click", generateReport);
-  ui.refreshInspectorBtn.addEventListener("click", () => {
+  ui.refreshInspectorBtn?.addEventListener("click", () => {
     if (selectedOrgId) refreshInspector(selectedOrgId);
   });
-  ui.refreshResultsBtn.addEventListener("click", refreshRuns);
-  ui.resultRunASelect.addEventListener("change", renderResults);
-  ui.resultRunBSelect.addEventListener("change", renderResults);
+  ui.refreshResultsBtn?.addEventListener("click", refreshRuns);
+  ui.resultRunASelect?.addEventListener("change", renderResults);
+  ui.resultRunBSelect?.addEventListener("change", renderResults);
 }
 
 function activateTab(tabName, reveal = false) {
@@ -551,11 +551,11 @@ function renderControlValues() {
   $("#disasterValue").textContent = `${Number(ui.disasterToggle.value || 0).toFixed(1)}%`;
   $("#regenValue").textContent = Number(ui.regenInput.value || 0).toFixed(2);
   $("#maintenanceValue").textContent = Number(ui.maintenanceInput.value || 0).toFixed(2);
-  $("#stopExtinctValue").textContent = Number(ui.stopExtinctToggle.value || 0) >= 1 ? "on" : "off";
-  $("#stopMaxTickValue").textContent = stopLabel(ui.stopMaxTickInput.value, "t");
-  $("#stopRuntimeValue").textContent = stopLabel(ui.stopRuntimeInput.value, "min");
-  $("#stopStableValue").textContent = stopLabel(ui.stopStableInput.value, "t");
-  $("#stopDominanceValue").textContent = stopLabel(ui.stopDominanceInput.value, "%");
+  setText("#stopExtinctValue", Number(controlValue(ui.stopExtinctToggle, 0)) >= 1 ? "on" : "off");
+  setText("#stopMaxTickValue", stopLabel(controlValue(ui.stopMaxTickInput, 0), "t"));
+  setText("#stopRuntimeValue", stopLabel(controlValue(ui.stopRuntimeInput, 0), "min"));
+  setText("#stopStableValue", stopLabel(controlValue(ui.stopStableInput, 0), "t"));
+  setText("#stopDominanceValue", stopLabel(controlValue(ui.stopDominanceInput, 0), "%"));
   $("#llmCapValue").textContent = ui.llmCapInput.value;
   $("#llmTokenBudgetValue").textContent = formatBudgetLabel(Number(ui.llmTokenBudgetInput.value || 0));
   $("#llmTempValue").textContent = Number(ui.llmTempInput.value || 0).toFixed(2);
@@ -927,11 +927,11 @@ function renderRunSelect(select, rows, emptyLabel, allowBlank) {
 }
 
 function renderResults() {
-  if (!ui.resultCurrent || !state) return;
+  if (!ui.resultCurrent || !ui.resultStatus || !ui.resultComparison || !ui.resultCompareStatus || !state) return;
   ui.resultStatus.textContent = `${runs.length} saved`;
   ui.resultCurrent.innerHTML = resultCardHtml(liveResultSummary(), "Live world");
-  const primary = runs.find((run) => run.run_id === ui.resultRunASelect.value);
-  const compare = runs.find((run) => run.run_id === ui.resultRunBSelect.value);
+  const primary = runs.find((run) => run.run_id === ui.resultRunASelect?.value);
+  const compare = runs.find((run) => run.run_id === ui.resultRunBSelect?.value);
   if (!primary) {
     ui.resultCompareStatus.textContent = "choose runs";
     ui.resultComparison.innerHTML = `<div class="empty-note">Export at least one run, then select it here to compare outcomes.</div>`;
@@ -1560,6 +1560,15 @@ function stopLabel(value, suffix) {
   return number > 0 ? `${number}${suffix}` : "off";
 }
 
+function controlValue(input, fallback = 0) {
+  return input ? input.value : fallback;
+}
+
+function setText(selector, value) {
+  const element = $(selector);
+  if (element) element.textContent = value;
+}
+
 function isTokenBudgetExhausted() {
   return Boolean(
     state?.config?.agent_mode === "llm_json" &&
@@ -1570,18 +1579,18 @@ function isTokenBudgetExhausted() {
 function automaticStopReason(tokenBudgetExhausted = false) {
   if (!state) return "";
   if (tokenBudgetExhausted) return "token budget reached";
-  if (Number(ui.stopExtinctToggle.value || 0) >= 1 && state.tick > 0 && Number(state.stats.population || 0) <= 0) {
+  if (Number(controlValue(ui.stopExtinctToggle, 0)) >= 1 && state.tick > 0 && Number(state.stats.population || 0) <= 0) {
     return "extinction";
   }
-  const maxTick = Number(ui.stopMaxTickInput.value || 0);
+  const maxTick = Number(controlValue(ui.stopMaxTickInput, 0));
   if (maxTick > 0 && Number(state.tick || 0) >= maxTick) {
     return `tick ${maxTick} reached`;
   }
-  const runtimeMinutes = Number(ui.stopRuntimeInput.value || 0);
+  const runtimeMinutes = Number(controlValue(ui.stopRuntimeInput, 0));
   if (runtimeMinutes > 0 && playStartedAt > 0 && Date.now() - playStartedAt >= runtimeMinutes * 60_000) {
     return `${runtimeMinutes} min reached`;
   }
-  const dominance = Number(ui.stopDominanceInput.value || 0);
+  const dominance = Number(controlValue(ui.stopDominanceInput, 0));
   const topLineage = state.lineages?.[0];
   if (dominance > 0 && topLineage && Number(state.stats.population || 0) > 0) {
     const share = (Number(topLineage.population || 0) / Number(state.stats.population || 1)) * 100;
@@ -1589,7 +1598,7 @@ function automaticStopReason(tokenBudgetExhausted = false) {
       return `${dominance}% dominance`;
     }
   }
-  const stableTicks = Number(ui.stopStableInput.value || 0);
+  const stableTicks = Number(controlValue(ui.stopStableInput, 0));
   if (stableTicks > 0 && hasStablePopulation(stableTicks)) {
     return `${stableTicks}t no-change`;
   }
