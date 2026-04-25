@@ -73,6 +73,14 @@ python -B scripts/check_repository_hygiene.py
 
 The GitHub Actions workflow runs the same checks on push and pull request.
 
+### Run In GitHub Codespaces
+
+You can run Context Genome directly in GitHub Codespaces:
+
+[Open in GitHub Codespaces](https://codespaces.new/FINNMATH1992/Context-Genome?quickstart=1)
+
+The dev container installs the package, starts the server on port `8765`, and asks Codespaces to forward that port as `Context Genome`. When the browser preview opens, add the model Base URL and API key in `Tune -> LLM Runtime`; the key is stored only in server memory and is not committed.
+
 ## Connect An LLM
 
 The browser defaults to `LLM JSON` mode. The server calls an OpenAI-compatible `/chat/completions` endpoint and parses the returned JSON action.

@@ -73,6 +73,14 @@ python -B scripts/check_repository_hygiene.py
 
 GitHub Actions 会在 push 和 pull request 时自动运行同一组检查。
 
+### 在 GitHub Codespaces 中运行
+
+Context Genome 可以直接在 GitHub Codespaces 中运行：
+
+[Open in GitHub Codespaces](https://codespaces.new/FINNMATH1992/Context-Genome?quickstart=1)
+
+dev container 会安装 editable package，自动在 `8765` 端口启动服务，并让 Codespaces 转发这个端口为 `Context Genome`。浏览器预览打开后，在 `Tune -> LLM Runtime` 里填写模型 Base URL 和 API key；key 只保存在服务端内存中，不会提交到仓库。
+
 ## 接入大模型
 
 默认界面已经使用 `LLM JSON` 模式。服务端会调用 OpenAI-compatible `/chat/completions` 接口，解析模型返回的严格 JSON 动作。
