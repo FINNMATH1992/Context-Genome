@@ -14,7 +14,11 @@
 
 Context Genome 把每个大模型有机体的上下文看作“基因组”：它包含方法论、偏好、能力权重、短期记忆和自我修正规则。有机体在网格生态中行动，获取能量、移动、复制、偷取片段、修复自身、反思并改写自己的上下文。研究者可以观察生态，也可以直接编辑某个有机体的上下文，看它如何改变后续行为和演化方向。
 
-![Context Genome overview](docs/images/context-genome-overview.png)
+<p align="center">
+  <img src="docs/images/context-genome-overview.png" alt="Context Genome observer showing the ecology grid, status cards, and live summary" width="960" />
+  <br />
+  <sub>观察视图：网格生态、资源场、谱系信号和当前世界摘要。</sub>
+</p>
 
 ## 研究假设
 
@@ -167,7 +171,11 @@ Context Genome 使用两阶段回合：
 
 ## 玩法
 
-![Context editor](docs/images/context-editor.png)
+<p align="center">
+  <img src="docs/images/context-editor.png" alt="Context Genome editor showing an organism context genome and ability weights" width="960" />
+  <br />
+  <sub>编辑视图：种子上下文、选中有机体文件、能力权重和可编辑 context genome。</sub>
+</p>
 
 1. **选择生态预设**  
    顶部的 `Ecology` 可以切换 `sandbox`、`wild`、`tournament`、`abiogenesis`。  

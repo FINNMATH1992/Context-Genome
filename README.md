@@ -14,7 +14,11 @@ An LLM context evolution sandbox.
 
 Context Genome treats each LLM organism's context as a genome: a compact, editable bundle of methods, preferences, ability weights, short-term memory, and self-revision rules. Organisms act inside a grid ecology, gather energy, move, reproduce, steal fragments, repair themselves, reflect, and rewrite their own context. A researcher can observe the ecology, tune the world, export runs, and directly edit any organism's context genome to see how behavior changes.
 
-![Context Genome overview](docs/images/context-genome-overview.png)
+<p align="center">
+  <img src="docs/images/context-genome-overview.png" alt="Context Genome observer showing the ecology grid, status cards, and live summary" width="960" />
+  <br />
+  <sub>Observer view: grid ecology, resource field, lineage signals, and live world summary.</sub>
+</p>
 
 ## Research Thesis
 
@@ -167,7 +171,11 @@ This avoids giving earlier-returning requests an unfair ordering advantage. If a
 
 ## How To Play
 
-![Context editor](docs/images/context-editor.png)
+<p align="center">
+  <img src="docs/images/context-editor.png" alt="Context Genome editor showing an organism context genome and ability weights" width="960" />
+  <br />
+  <sub>Editor view: seed context, selected organism files, ability weights, and editable context genome.</sub>
+</p>
 
 1. **Choose an ecology preset**  
    Use `Ecology` to switch between `sandbox`, `wild`, `tournament`, and `abiogenesis`. `sandbox` is best for debugging; `wild` adds stronger competition and mutation pressure.
