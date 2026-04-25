@@ -183,6 +183,23 @@ Context Genome 使用两阶段回合：
 
 这样同一个 tick 里的行动不会因为请求先后顺序产生偏置。如果某个请求失败、超时或超出本 tick 的调用上限，该有机体会临时退回 rule-agent 行动。
 
+## 演化示例
+
+<p align="center">
+  <img src="docs/images/context-genome-evolution.gif" alt="Context Genome ecology animation showing organisms spreading across a grid" width="760" />
+  <br />
+  <sub>这个可复现示例使用 <code>docs/examples/context-genome-sandbox-seed7-summary.json</code> 中导出的 preset/seed 设置生成。预览使用 rule-agent 模式，因此不会消耗 LLM token。</sub>
+</p>
+
+可以这样重新生成：
+
+```bash
+python -B scripts/render_evolution_gif.py \
+  --run-summary docs/examples/context-genome-sandbox-seed7-summary.json \
+  --ticks 140 \
+  --sample-every 2
+```
+
 ## 玩法
 
 <p align="center">
@@ -326,9 +343,10 @@ context_genome/
   engine/      世界模型、生态规则、预设、导出逻辑
   web/         浏览器 UI 资源
 skill_garden/  旧版导入路径兼容层
-scripts/       本地维护工具，例如 doctor 和仓库卫生检查
+scripts/       本地维护工具，例如 doctor、仓库卫生检查和 GIF 渲染
 tests/         parser、export、runtime、token budget 等单元测试
 docs/images/   README 截图和 logo 资源
+docs/examples/ 文档使用的脱敏小型 run summary
 ```
 
 更详细的实现结构见 [docs/architecture.md](docs/architecture.md)。

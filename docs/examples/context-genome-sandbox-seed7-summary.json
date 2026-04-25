@@ -1,0 +1,37 @@
+{
+  "run_id": "run_20260425_191347_sandbox_seed7_t262",
+  "preset": "sandbox",
+  "seed": 7,
+  "tick": 262,
+  "stats": {
+    "population": 83,
+    "corpses": 15,
+    "lineages": 3,
+    "births": 185,
+    "deaths": 102,
+    "diversity": 0.621,
+    "llm_total_tokens": 8100124,
+    "llm_prompt_cache_hit_tokens": 2910720,
+    "llm_prompt_cache_miss_tokens": 4959982
+  },
+  "lineages": [
+    {
+      "lineage_id": "lin_e61572",
+      "population": 56,
+      "occupied_cells": 42,
+      "dominant_strategy": "forage"
+    },
+    {
+      "lineage_id": "lin_69aad8",
+      "population": 26,
+      "occupied_cells": 22,
+      "dominant_strategy": "forage"
+    },
+    {
+      "lineage_id": "lin_003263",
+      "population": 1,
+      "occupied_cells": 1,
+      "dominant_strategy": "guard"
+    }
+  ]
+}

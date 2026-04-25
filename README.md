@@ -183,6 +183,23 @@ Context Genome uses a two-phase LLM turn:
 
 This avoids giving earlier-returning requests an unfair ordering advantage. If a request fails, times out, or exceeds the call cap for the tick, that organism falls back to a rule-agent action for the turn.
 
+## Example Evolution
+
+<p align="center">
+  <img src="docs/images/context-genome-evolution.gif" alt="Animated Context Genome ecology showing organisms spreading across a grid" width="760" />
+  <br />
+  <sub>Reproducible sample generated from the exported run settings in <code>docs/examples/context-genome-sandbox-seed7-summary.json</code>. It uses rule-agent mode for the preview, so it costs no LLM tokens.</sub>
+</p>
+
+Regenerate the preview with:
+
+```bash
+python -B scripts/render_evolution_gif.py \
+  --run-summary docs/examples/context-genome-sandbox-seed7-summary.json \
+  --ticks 140 \
+  --sample-every 2
+```
+
 ## How To Play
 
 <p align="center">
@@ -322,9 +339,10 @@ context_genome/
   engine/      World model, ecology rules, presets, export logic
   web/         Browser UI assets
 skill_garden/  Legacy compatibility import paths
-scripts/       Local maintenance tools such as doctor and hygiene checks
+scripts/       Local maintenance tools such as doctor, hygiene checks, and GIF rendering
 tests/         Unit tests for parsing, export, runtime, and token budget guards
 docs/images/   README screenshots and logo assets
+docs/examples/ Small sanitized run summaries used by docs
 ```
 
 For a deeper implementation map, see [docs/architecture.md](docs/architecture.md).
