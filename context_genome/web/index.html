@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Context Genome</title>
     <link rel="icon" href="/logo.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="/styles.css?v=20260425-logo" />
+    <link rel="stylesheet" href="/styles.css?v=20260425-results" />
   </head>
   <body>
     <div class="app">
@@ -81,6 +81,7 @@
           <div class="tabbar" role="tablist" aria-label="Workspace sections">
             <button id="tabObserve" type="button" role="tab" aria-selected="false" aria-controls="panelObserve" data-tab="observe">Observe</button>
             <button id="tabTune" class="is-active" type="button" role="tab" aria-selected="true" aria-controls="panelTune" data-tab="tune">Tune</button>
+            <button id="tabResults" type="button" role="tab" aria-selected="false" aria-controls="panelResults" data-tab="results">Results</button>
             <button id="tabCell" type="button" role="tab" aria-selected="false" aria-controls="panelCell" data-tab="cell">Cell</button>
             <button id="tabEdit" type="button" role="tab" aria-selected="false" aria-controls="panelEdit" data-tab="edit">Edit</button>
             <button id="tabReport" type="button" role="tab" aria-selected="false" aria-controls="panelReport" data-tab="report">Report</button>
@@ -273,6 +274,36 @@
 
             <section class="panel">
               <div class="panel-head">
+                <h2>Stop Conditions</h2>
+                <span id="stopStatus">optional</span>
+              </div>
+              <div class="control-sliders">
+                <label>
+                  <span>Extinction <output id="stopExtinctValue">on</output></span>
+                  <input id="stopExtinctToggle" type="range" min="0" max="1" step="1" value="1" />
+                </label>
+                <label>
+                  <span>Max tick <output id="stopMaxTickValue">off</output></span>
+                  <input id="stopMaxTickInput" type="range" min="0" max="5000" step="50" value="0" />
+                </label>
+                <label>
+                  <span>Runtime <output id="stopRuntimeValue">off</output></span>
+                  <input id="stopRuntimeInput" type="range" min="0" max="60" step="1" value="0" />
+                </label>
+                <label>
+                  <span>No-change <output id="stopStableValue">off</output></span>
+                  <input id="stopStableInput" type="range" min="0" max="200" step="5" value="0" />
+                </label>
+                <label>
+                  <span>Dominance <output id="stopDominanceValue">off</output></span>
+                  <input id="stopDominanceInput" type="range" min="0" max="100" step="5" value="0" />
+                </label>
+              </div>
+              <p id="stopHint" class="hint">These conditions pause Play only. Step still works for diagnosis.</p>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
                 <h2>Run Artifacts</h2>
                 <span id="exportStatus">not exported</span>
               </div>
@@ -281,6 +312,29 @@
                 <button id="loadRunBtn" type="button">Load Final</button>
               </div>
               <p id="artifactHint" class="hint">Exports are saved under the local runs directory.</p>
+            </section>
+          </section>
+
+          <section id="panelResults" class="tab-panel" role="tabpanel" aria-labelledby="tabResults" data-tab-panel="results" hidden>
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Experiment Results</h2>
+                <span id="resultStatus">live</span>
+              </div>
+              <div id="resultCurrent" class="result-grid"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h2>Compare Runs</h2>
+                <span id="resultCompareStatus">choose runs</span>
+              </div>
+              <div class="result-controls">
+                <select id="resultRunASelect"></select>
+                <select id="resultRunBSelect"></select>
+                <button id="refreshResultsBtn" type="button">Refresh</button>
+              </div>
+              <div id="resultComparison" class="comparison-grid"></div>
             </section>
           </section>
 
@@ -318,6 +372,29 @@
                 <button id="removeOrgBtn" class="danger" type="button">Remove</button>
               </div>
             </section>
+
+            <section class="panel inspector-panel">
+              <div class="panel-head">
+                <h2>LLM Inspector</h2>
+                <span id="inspectorStatus">select organism</span>
+              </div>
+              <div id="inspectorSummary" class="inspector-summary"></div>
+              <div class="inspector-actions">
+                <button id="refreshInspectorBtn" type="button">Refresh Inspector</button>
+              </div>
+              <details open>
+                <summary>Prompt messages</summary>
+                <pre id="inspectorPrompt" class="inspector-pre">No prompt yet.</pre>
+              </details>
+              <details open>
+                <summary>Raw response</summary>
+                <pre id="inspectorResponse" class="inspector-pre">No response yet.</pre>
+              </details>
+              <details>
+                <summary>Parsed action</summary>
+                <pre id="inspectorAction" class="inspector-pre">No action yet.</pre>
+              </details>
+            </section>
           </section>
 
           <section id="panelReport" class="tab-panel" role="tabpanel" aria-labelledby="tabReport" data-tab-panel="report" hidden>
@@ -347,6 +424,6 @@
       </main>
     </div>
 
-    <script src="/app.js?v=20260425-context-genome"></script>
+    <script src="/app.js?v=20260425-results"></script>
   </body>
 </html>

@@ -25,6 +25,11 @@ const ui = {
   disasterToggle: $("#disasterToggle"),
   regenInput: $("#regenInput"),
   maintenanceInput: $("#maintenanceInput"),
+  stopExtinctToggle: $("#stopExtinctToggle"),
+  stopMaxTickInput: $("#stopMaxTickInput"),
+  stopRuntimeInput: $("#stopRuntimeInput"),
+  stopStableInput: $("#stopStableInput"),
+  stopDominanceInput: $("#stopDominanceInput"),
   llmModelInput: $("#llmModelInput"),
   llmBaseUrlInput: $("#llmBaseUrlInput"),
   llmApiKeyInput: $("#llmApiKeyInput"),
@@ -40,11 +45,23 @@ const ui = {
   skillEditor: $("#skillEditor"),
   saveSkillBtn: $("#saveSkillBtn"),
   removeOrgBtn: $("#removeOrgBtn"),
+  inspectorStatus: $("#inspectorStatus"),
+  inspectorSummary: $("#inspectorSummary"),
+  refreshInspectorBtn: $("#refreshInspectorBtn"),
+  inspectorPrompt: $("#inspectorPrompt"),
+  inspectorResponse: $("#inspectorResponse"),
+  inspectorAction: $("#inspectorAction"),
   reportBtn: $("#reportBtn"),
   reportStatus: $("#reportStatus"),
   reportOutput: $("#reportOutput"),
   runSelect: $("#runSelect"),
   loadRunBtn: $("#loadRunBtn"),
+  resultStatus: $("#resultStatus"),
+  resultCurrent: $("#resultCurrent"),
+  resultCompareStatus: $("#resultCompareStatus"),
+  resultRunASelect: $("#resultRunASelect"),
+  resultRunBSelect: $("#resultRunBSelect"),
+  refreshResultsBtn: $("#refreshResultsBtn"),
   experimentTemplateStatus: $("#experimentTemplateStatus"),
   experimentTemplateHint: $("#experimentTemplateHint"),
   experimentButtons: [...document.querySelectorAll("[data-experiment]")],
@@ -165,6 +182,7 @@ let selectedCell = { x: 0, y: 0 };
 let selectedOrgId = null;
 let playing = false;
 let playTimer = null;
+let playStartedAt = 0;
 let busy = false;
 let runs = [];
 let activeTab = "tune";
@@ -298,6 +316,11 @@ function bindEvents() {
     ui.disasterToggle,
     ui.regenInput,
     ui.maintenanceInput,
+    ui.stopExtinctToggle,
+    ui.stopMaxTickInput,
+    ui.stopRuntimeInput,
+    ui.stopStableInput,
+    ui.stopDominanceInput,
     ui.llmCapInput,
     ui.llmTokenBudgetInput,
     ui.llmTempInput,
@@ -373,6 +396,12 @@ function bindEvents() {
   });
 
   ui.reportBtn.addEventListener("click", generateReport);
+  ui.refreshInspectorBtn.addEventListener("click", () => {
+    if (selectedOrgId) refreshInspector(selectedOrgId);
+  });
+  ui.refreshResultsBtn.addEventListener("click", refreshRuns);
+  ui.resultRunASelect.addEventListener("change", renderResults);
+  ui.resultRunBSelect.addEventListener("change", renderResults);
 }
 
 function activateTab(tabName, reveal = false) {
@@ -522,6 +551,11 @@ function renderControlValues() {
   $("#disasterValue").textContent = `${Number(ui.disasterToggle.value || 0).toFixed(1)}%`;
   $("#regenValue").textContent = Number(ui.regenInput.value || 0).toFixed(2);
   $("#maintenanceValue").textContent = Number(ui.maintenanceInput.value || 0).toFixed(2);
+  $("#stopExtinctValue").textContent = Number(ui.stopExtinctToggle.value || 0) >= 1 ? "on" : "off";
+  $("#stopMaxTickValue").textContent = stopLabel(ui.stopMaxTickInput.value, "t");
+  $("#stopRuntimeValue").textContent = stopLabel(ui.stopRuntimeInput.value, "min");
+  $("#stopStableValue").textContent = stopLabel(ui.stopStableInput.value, "t");
+  $("#stopDominanceValue").textContent = stopLabel(ui.stopDominanceInput.value, "%");
   $("#llmCapValue").textContent = ui.llmCapInput.value;
   $("#llmTokenBudgetValue").textContent = formatBudgetLabel(Number(ui.llmTokenBudgetInput.value || 0));
   $("#llmTempValue").textContent = Number(ui.llmTempInput.value || 0).toFixed(2);
@@ -630,11 +664,13 @@ async function generateReport() {
 }
 
 function startPlaying() {
-  if (isTokenBudgetExhausted()) {
+  const stopReason = automaticStopReason(isTokenBudgetExhausted());
+  if (stopReason) {
     renderState();
     return;
   }
   playing = true;
+  playStartedAt = Date.now();
   ui.playBtn.textContent = "Pause";
   ui.playBtn.classList.add("is-playing");
   playTimer = setInterval(() => tick(Number(ui.speedInput.value)), 520);
@@ -642,6 +678,7 @@ function startPlaying() {
 
 function stopPlaying() {
   playing = false;
+  playStartedAt = 0;
   ui.playBtn.textContent = "Play";
   ui.playBtn.classList.remove("is-playing");
   if (playTimer) clearInterval(playTimer);
@@ -664,11 +701,12 @@ function renderState() {
   $("#integrityStat").textContent = `${Math.round(state.stats.avg_integrity * 100)}%`;
   $("#energyStat").textContent = Math.round(state.stats.total_cell_energy);
   const tokenBudgetExhausted = isTokenBudgetExhausted();
-  if (tokenBudgetExhausted && playing) {
+  const stopReason = automaticStopReason(tokenBudgetExhausted);
+  if (stopReason && playing) {
     stopPlaying();
   }
-  $("#tickSub").textContent = tokenBudgetExhausted
-    ? "token budget reached"
+  $("#tickSub").textContent = stopReason
+    ? stopReason
     : state.stats.llm_pending
       ? `${state.stats.llm_pending} pending`
       : playing
@@ -707,6 +745,7 @@ function renderState() {
   $("#cacheHitStat").textContent = recentCacheTotalTokens > 0 ? `${Math.round(recentCacheHitRate * 100)}%` : "0%";
   $("#cacheHitStat").title = `recent ${formatCompactNumber(recentCacheHitTokens)} hit / ${formatCompactNumber(recentCacheMissTokens)} miss; lifetime ${Math.round(cacheHitRate * 100)}%`;
   $("#cacheSub").textContent = `life ${Math.round(cacheHitRate * 100)}%`;
+  renderStopStatus(stopReason);
   const gridSummary = $("#gridSummary");
   const gridSummaryText = `${occupiedCells} occupied / ${corpseCells} corpse cells / max energy ${Math.max(...state.cells.map((cell) => cell.energy), 0).toFixed(1)}`;
   gridSummary.textContent = gridSummaryText;
@@ -716,6 +755,7 @@ function renderState() {
   renderGrid();
   renderSummary({ occupiedCells, corpseCells, avgCellEnergy, populationDelta, recentCacheHitRate });
   renderLineages();
+  renderResults();
   renderEvents();
   drawHistory();
 }
@@ -846,21 +886,134 @@ async function refreshRuns() {
 }
 
 function renderRuns() {
-  ui.runSelect.innerHTML = "";
-  if (!runs.length) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "No saved runs yet";
-    ui.runSelect.append(option);
+  renderRunSelect(ui.runSelect, runs, "No saved runs yet", false);
+  renderRunSelect(ui.resultRunASelect, runs, "Select primary run", true);
+  renderRunSelect(ui.resultRunBSelect, runs, "Select comparison run", true);
+  renderResults();
+}
+
+function renderRunSelect(select, rows, emptyLabel, allowBlank) {
+  if (!select) return;
+  const previous = select.value;
+  select.innerHTML = "";
+  if (allowBlank) {
+    const blank = document.createElement("option");
+    blank.value = "";
+    blank.textContent = emptyLabel;
+    select.append(blank);
+  }
+  if (!rows.length) {
+    if (!allowBlank) {
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = emptyLabel;
+      select.append(option);
+    }
     return;
   }
-  runs.forEach((run) => {
+  rows.forEach((run) => {
     const option = document.createElement("option");
     option.value = run.run_id;
     const pop = run.stats?.population ?? 0;
-    option.textContent = `${run.run_id} / pop ${pop}`;
-    ui.runSelect.append(option);
+    const tokens = run.stats?.llm_total_tokens ?? 0;
+    option.textContent = `${run.run_id} / pop ${pop} / ${formatCompactNumber(tokens)} tokens`;
+    select.append(option);
   });
+  if ([...select.options].some((option) => option.value === previous)) {
+    select.value = previous;
+  } else if (!allowBlank && rows[0]) {
+    select.value = rows[0].run_id;
+  }
+}
+
+function renderResults() {
+  if (!ui.resultCurrent || !state) return;
+  ui.resultStatus.textContent = `${runs.length} saved`;
+  ui.resultCurrent.innerHTML = resultCardHtml(liveResultSummary(), "Live world");
+  const primary = runs.find((run) => run.run_id === ui.resultRunASelect.value);
+  const compare = runs.find((run) => run.run_id === ui.resultRunBSelect.value);
+  if (!primary) {
+    ui.resultCompareStatus.textContent = "choose runs";
+    ui.resultComparison.innerHTML = `<div class="empty-note">Export at least one run, then select it here to compare outcomes.</div>`;
+    return;
+  }
+  ui.resultCompareStatus.textContent = compare ? "diff" : "single run";
+  ui.resultComparison.innerHTML = `
+    ${resultCardHtml(primary, "Primary")}
+    ${compare ? resultCardHtml(compare, "Compare") : `<div class="empty-note">Select a second run to see metric deltas.</div>`}
+    ${compare ? resultDeltaHtml(primary, compare) : ""}
+  `;
+}
+
+function liveResultSummary() {
+  return {
+    run_id: "live",
+    preset: state.config.name,
+    seed: ui.seedInput.value || "current",
+    tick: state.tick,
+    stats: state.stats || {},
+    lineages: state.lineages || [],
+  };
+}
+
+function resultCardHtml(run, title) {
+  const stats = run.stats || {};
+  const lineages = run.lineages || [];
+  const top = lineages[0];
+  const cacheRate = cacheHitRateFromStats(stats);
+  return `
+    <article class="result-card">
+      <strong>${escapeHtml(title)}</strong>
+      <small>${escapeHtml(run.run_id || "run")} / ${escapeHtml(run.preset || "preset")} / seed ${escapeHtml(run.seed ?? "none")}</small>
+      <div class="result-metrics">
+        ${metricHtml("tick", run.tick ?? 0)}
+        ${metricHtml("active", stats.population ?? 0)}
+        ${metricHtml("lineages", stats.lineages ?? lineages.length ?? 0)}
+        ${metricHtml("births", stats.births ?? 0)}
+        ${metricHtml("deaths", stats.deaths ?? 0)}
+        ${metricHtml("tokens", formatCompactNumber(stats.llm_total_tokens || 0))}
+        ${metricHtml("cache", `${Math.round(cacheRate * 100)}%`)}
+        ${metricHtml("integrity", `${Math.round((stats.avg_integrity || 0) * 100)}%`)}
+      </div>
+      <p>${top ? escapeHtml(`${top.lineage_id} leads: ${top.population} active / ${top.dominant_strategy} / score ${Number(top.score || 0).toFixed(1)}`) : "No leading lineage yet."}</p>
+    </article>
+  `;
+}
+
+function metricHtml(label, value) {
+  return `<span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(label)}</small></span>`;
+}
+
+function resultDeltaHtml(primary, compare) {
+  const a = primary.stats || {};
+  const b = compare.stats || {};
+  const rows = [
+    ["active", a.population, b.population],
+    ["lineages", a.lineages, b.lineages],
+    ["births", a.births, b.births],
+    ["deaths", a.deaths, b.deaths],
+    ["tokens", a.llm_total_tokens, b.llm_total_tokens],
+    ["cache hit", cacheHitRateFromStats(a) * 100, cacheHitRateFromStats(b) * 100],
+  ];
+  return `
+    <article class="result-card result-delta">
+      <strong>Delta</strong>
+      <small>primary minus comparison</small>
+      ${rows
+        .map(([label, left, right]) => {
+          const diff = Number(left || 0) - Number(right || 0);
+          const value = label === "cache hit" ? `${formatSigned(diff.toFixed(0))}%` : formatSigned(Math.round(diff));
+          return `<div><span>${escapeHtml(label)}</span><b>${escapeHtml(value)}</b></div>`;
+        })
+        .join("")}
+    </article>
+  `;
+}
+
+function cacheHitRateFromStats(stats) {
+  const hit = Number(stats?.llm_prompt_cache_hit_tokens || 0);
+  const miss = Number(stats?.llm_prompt_cache_miss_tokens || 0);
+  return hit + miss > 0 ? hit / (hit + miss) : 0;
 }
 
 function renderGrid() {
@@ -1163,6 +1316,7 @@ async function loadOrg(orgId, replaceEditor = true) {
       ui.skillEditor.value = org.skill_text || "";
     }
     renderReadonlySkill(org.skill_text || "");
+    await refreshInspector(orgId);
   } catch {
     clearOrgEditor();
   }
@@ -1176,6 +1330,49 @@ function clearOrgEditor() {
   renderOrgAbilities({});
   renderOrgFiles({});
   renderReadonlySkill("");
+  renderInspector(null);
+}
+
+async function refreshInspector(orgId) {
+  if (!orgId) {
+    renderInspector(null);
+    return;
+  }
+  try {
+    const payload = await api(`/api/llm_inspector?id=${encodeURIComponent(orgId)}`);
+    renderInspector(payload);
+  } catch {
+    renderInspector(null);
+  }
+}
+
+function renderInspector(payload) {
+  if (!ui.inspectorStatus) return;
+  if (!payload) {
+    ui.inspectorStatus.textContent = "select organism";
+    ui.inspectorSummary.innerHTML = `<span><strong>0</strong><small>turns</small></span><span><strong>-</strong><small>model</small></span>`;
+    ui.inspectorPrompt.textContent = "No prompt yet.";
+    ui.inspectorResponse.textContent = "No response yet.";
+    ui.inspectorAction.textContent = "No action yet.";
+    return;
+  }
+  const usage = payload.usage || {};
+  ui.inspectorStatus.textContent = payload.raw_response ? `tick ${payload.last_llm_tick}` : "not called";
+  ui.inspectorSummary.innerHTML = `
+    ${metricHtml("turns", payload.llm_turns || 0)}
+    ${metricHtml("last tick", payload.last_llm_tick >= 0 ? payload.last_llm_tick : "-")}
+    ${metricHtml("tokens", formatCompactNumber(usage.total_tokens || 0))}
+    ${metricHtml("cache hit", formatCompactNumber(usage.prompt_cache_hit_tokens || 0))}
+    ${metricHtml("cache miss", formatCompactNumber(usage.prompt_cache_miss_tokens || 0))}
+    ${metricHtml("model", payload.llm_model || "-")}
+  `;
+  ui.inspectorPrompt.textContent = payload.prompt || "No prompt captured yet. Use LLM JSON mode or Prompt preview.";
+  ui.inspectorResponse.textContent = payload.raw_response || "No LLM response captured yet.";
+  ui.inspectorAction.textContent = payload.parsed_action
+    ? JSON.stringify(payload.parsed_action, null, 2)
+    : payload.parse_error
+      ? `Parse error: ${payload.parse_error}`
+      : "No parsed action yet.";
 }
 
 function renderOrgTags(tags) {
@@ -1358,11 +1555,70 @@ function formatBudgetLabel(value) {
   return number > 0 ? formatCompactNumber(number) : "off";
 }
 
+function stopLabel(value, suffix) {
+  const number = Number(value || 0);
+  return number > 0 ? `${number}${suffix}` : "off";
+}
+
 function isTokenBudgetExhausted() {
   return Boolean(
     state?.config?.agent_mode === "llm_json" &&
       state?.stats?.llm_token_budget_exhausted,
   );
+}
+
+function automaticStopReason(tokenBudgetExhausted = false) {
+  if (!state) return "";
+  if (tokenBudgetExhausted) return "token budget reached";
+  if (Number(ui.stopExtinctToggle.value || 0) >= 1 && state.tick > 0 && Number(state.stats.population || 0) <= 0) {
+    return "extinction";
+  }
+  const maxTick = Number(ui.stopMaxTickInput.value || 0);
+  if (maxTick > 0 && Number(state.tick || 0) >= maxTick) {
+    return `tick ${maxTick} reached`;
+  }
+  const runtimeMinutes = Number(ui.stopRuntimeInput.value || 0);
+  if (runtimeMinutes > 0 && playStartedAt > 0 && Date.now() - playStartedAt >= runtimeMinutes * 60_000) {
+    return `${runtimeMinutes} min reached`;
+  }
+  const dominance = Number(ui.stopDominanceInput.value || 0);
+  const topLineage = state.lineages?.[0];
+  if (dominance > 0 && topLineage && Number(state.stats.population || 0) > 0) {
+    const share = (Number(topLineage.population || 0) / Number(state.stats.population || 1)) * 100;
+    if (share >= dominance) {
+      return `${dominance}% dominance`;
+    }
+  }
+  const stableTicks = Number(ui.stopStableInput.value || 0);
+  if (stableTicks > 0 && hasStablePopulation(stableTicks)) {
+    return `${stableTicks}t no-change`;
+  }
+  return "";
+}
+
+function hasStablePopulation(stableTicks) {
+  const rows = state?.history || [];
+  if (!rows.length) return false;
+  const currentPop = Number(state.stats.population || 0);
+  const windowRows = rows.filter((row) => Number(state.tick || 0) - Number(row.tick || 0) <= stableTicks);
+  if (windowRows.length < 3) return false;
+  return windowRows.every((row) => Number(row.population || 0) === currentPop);
+}
+
+function renderStopStatus(reason) {
+  const status = $("#stopStatus");
+  const hint = $("#stopHint");
+  if (!status || !hint) return;
+  if (reason) {
+    status.textContent = "paused";
+    hint.textContent = `Auto-paused: ${reason}. Step still works for diagnosis.`;
+  } else if (playing) {
+    status.textContent = "armed";
+    hint.textContent = "Stop conditions are watching the active Play loop.";
+  } else {
+    status.textContent = "optional";
+    hint.textContent = "These conditions pause Play only. Step still works for diagnosis.";
+  }
 }
 
 function formatSigned(value) {

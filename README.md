@@ -198,7 +198,7 @@ This avoids giving earlier-returning requests an unfair ordering advantage. If a
    In `Tune`, use `Quick Smoke`, `Low-Cost LLM`, `Selection Pressure`, or `Cache Study` to populate recommended settings. Templates only adjust controls; press `Reset` to rebuild the starting world.
 
 3. **Set up the starting world**
-   In `Tune`, adjust grid size, initial cell energy, minerals, radiation, initial population, organism energy, and per-cell capacity. These setup values apply on the next `Reset`.
+   In `Tune`, adjust grid size, initial cell energy, minerals, radiation, initial population, organism energy, and per-cell capacity. These setup values apply on the next `Reset`. Use `Stop Conditions` to pause Play automatically on extinction, tick limit, runtime limit, no-change windows, or lineage dominance.
 
 4. **Run the ecology**
    Use `Step` for a single advance and `Play` for continuous simulation. `Ticks` controls how many ticks are advanced per play interval.
@@ -213,7 +213,7 @@ This avoids giving earlier-returning requests an unfair ordering advantage. If a
    Click any cell and open `Cell` to see energy, minerals, radiation, entropy, the local context fragment, and visible organisms.
 
 8. **Edit an organism's context**
-   Click an organism, open `Edit`, modify its context genome, and press `Save Context`. This is a direct researcher intervention into the organism's method, ability profile, or self-narrative.
+   Click an organism, open `Edit`, modify its context genome, and press `Save Context`. This is a direct researcher intervention into the organism's method, ability profile, or self-narrative. `LLM Inspector` shows the captured prompt messages, raw model response, parsed action, token usage, and cache usage for that organism.
 
 9. **Spawn a new seed**
    In `Seed Context`, pick a template or write a new context, select a target cell, and press `Spawn Here`.
@@ -221,10 +221,13 @@ This avoids giving earlier-returning requests an unfair ordering advantage. If a
 10. **Review events**
    `Log` shows births, copies, moves, steals, reflections, deaths, LLM calls, and JSON parse failures.
 
-11. **Generate a bilingual report**
+11. **Compare results**
+    `Results` summarizes the live world and compares exported runs by population, lineages, births, deaths, token use, cache hit rate, integrity, and leading lineage.
+
+12. **Generate a bilingual report**
     `Report` sends a compact global snapshot to the configured LLM and returns a Markdown report in English first, then Chinese. It highlights the leading lineage, its representative context genome, behavior trends, risks, and suggested next experiments.
 
-12. **Export and replay**
+13. **Export and replay**
     `Export Run` saves the current experiment under `runs/<run_id>/`. Later, `Run Artifacts` can load the final state back into the observer.
 
 ## Context Genome Format
@@ -269,9 +272,10 @@ First-person context is therefore marked as the model's own prior state. World o
 ## Browser UI
 
 - `Observe`: World summary, signals, recent actions, lineages, and population trace.
-- `Tune`: Experiment templates, world setup, selection pressure, LLM runtime, exports, and loading.
+- `Tune`: Experiment templates, world setup, stop conditions, selection pressure, LLM runtime, exports, and loading.
+- `Results`: Live result summary and exported-run comparison.
 - `Cell`: The selected cell and organisms inside it.
-- `Edit`: Seed context and individual organism context editing.
+- `Edit`: Seed context, individual organism context editing, and LLM Inspector.
 - `Report`: One-click LLM report of the current ecology, English first and Chinese second.
 - `Log`: Full event stream.
 

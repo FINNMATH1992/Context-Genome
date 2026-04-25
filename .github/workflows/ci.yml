@@ -2,33 +2,26 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Compile Python
-        run: python -B -m compileall context_genome skill_garden tests scripts
-
-      - name: Run environment doctor
-        run: python -B scripts/doctor.py --json --port 0
-
-      - name: Run unit tests
-        run: python -B -m unittest discover -s tests
-
-      - name: Check frontend syntax
-        run: node --check context_genome/web/app.js
-
-      - name: Check repository hygiene
-        run: python -B scripts/check_repository_hygiene.py
+      - name: Run checks
+        run: make check

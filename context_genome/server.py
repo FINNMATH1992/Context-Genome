@@ -13,9 +13,10 @@ from urllib.parse import parse_qs, urlparse
 
 from . import __version__
 from .agents import AGENT_MODES
+from .agents.action_parser import parse_action_text
 from .agents.drivers import LLMDriverError, _call_chat_completion, _llm_runtime, llm_runtime_status, update_llm_runtime_overrides
 from .engine import ContextGenomeWorld, get_preset
-from .engine.exporter import list_runs, load_run, save_run
+from .engine.exporter import list_runs, load_run, load_run_summary, save_run
 from .engine.presets import PRESET_SEEDS, PRESETS, FORAGER_SKILL
 
 
@@ -83,6 +84,18 @@ class GenomeHandler(BaseHTTPRequestHandler):
             if path == "/api/runs":
                 self._send_json({"runs": list_runs(RUN_ROOT)})
                 return
+            if path == "/api/run_summary":
+                run_id = query.get("id", [""])[0]
+                if not run_id:
+                    self._send_json({"error": "run id required"}, status=400)
+                    return
+                try:
+                    self._send_json(load_run_summary(RUN_ROOT, run_id))
+                except FileNotFoundError:
+                    self._send_json({"error": "run not found"}, status=404)
+                except json.JSONDecodeError:
+                    self._send_json({"error": "run summary is invalid"}, status=500)
+                return
             if path == "/api/cell":
                 x = int(query.get("x", ["0"])[0])
                 y = int(query.get("y", ["0"])[0])
@@ -91,6 +104,14 @@ class GenomeHandler(BaseHTTPRequestHandler):
             if path == "/api/org":
                 org_id = query.get("id", [""])[0]
                 payload = world.org_snapshot(org_id)
+                if payload is None:
+                    self._send_json({"error": "organism not found"}, status=404)
+                else:
+                    self._send_json(payload)
+                return
+            if path == "/api/llm_inspector":
+                org_id = query.get("id", [""])[0]
+                payload = _build_llm_inspector_payload(world, org_id)
                 if payload is None:
                     self._send_json({"error": "organism not found"}, status=404)
                 else:
@@ -295,6 +316,48 @@ def _health_payload(world: ContextGenomeWorld) -> Dict[str, Any]:
         "llm_token_budget_remaining": stats.get("llm_token_budget_remaining", 0),
         "llm_token_budget_exhausted": stats.get("llm_token_budget_exhausted", False),
     }
+
+
+def _build_llm_inspector_payload(world: ContextGenomeWorld, org_id: str) -> Dict[str, Any] | None:
+    org = world.orgs.get(org_id)
+    if org is None:
+        return None
+    prompt = _org_file_content(org, "last_prompt.txt")
+    response_file = _org_file_content(org, "last_llm_response.json")
+    dialogue = _org_file_content(org, "dialogue.jsonl")
+    prompt_state = _org_file_content(org, "prompt_state.json")
+    raw_content = ""
+    usage: Dict[str, Any] = {}
+    if response_file:
+        try:
+            response_payload = json.loads(response_file)
+        except json.JSONDecodeError:
+            response_payload = {"content": response_file, "usage": {}}
+        if isinstance(response_payload, dict):
+            raw_content = str(response_payload.get("content") or "")
+            usage = response_payload.get("usage") if isinstance(response_payload.get("usage"), dict) else {}
+    parsed = parse_action_text(org_id, raw_content) if raw_content else None
+    return {
+        "ok": True,
+        "org_id": org.org_id,
+        "lineage_id": org.lineage_id,
+        "llm_session_id": org.llm_session_id,
+        "llm_turns": org.llm_turns,
+        "last_llm_tick": org.last_llm_tick,
+        "llm_model": org.llm_model,
+        "prompt": prompt,
+        "raw_response": raw_content,
+        "usage": usage,
+        "parsed_action": parsed.action.as_dict() if parsed and parsed.ok else None,
+        "parse_error": "" if parsed is None or parsed.ok else parsed.error,
+        "dialogue": dialogue,
+        "prompt_state": prompt_state,
+    }
+
+
+def _org_file_content(org, path: str) -> str:
+    file = org.files.get(path)
+    return file.content if file is not None else ""
 
 
 def _build_report_context(world: ContextGenomeWorld) -> Dict[str, Any]:

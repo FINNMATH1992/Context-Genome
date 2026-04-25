@@ -74,9 +74,18 @@ def list_runs(output_root: Path) -> List[Dict[str, Any]]:
                 "seed": summary.get("seed"),
                 "tick": summary.get("tick"),
                 "stats": summary.get("stats", {}),
+                "lineages": summary.get("lineages", [])[:8],
+                "files": summary.get("files", {}),
             }
         )
     return rows
+
+
+def load_run_summary(output_root: Path, run_id: str) -> Dict[str, Any]:
+    safe_id = Path(run_id).name
+    summary_path = output_root / safe_id / "summary.json"
+    payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, dict) else {}
 
 
 def load_run(output_root: Path, run_id: str) -> ContextGenomeWorld:
