@@ -57,6 +57,16 @@ http://127.0.0.1:8765
 
 `run.sh` 也支持 `CONTEXT_GENOME_HOST` 和 `CONTEXT_GENOME_PORT`，并会在启动进程中把常见的 `OPENAI_*` 或旧版 `SKILL_GARDEN_LLM_*` 环境变量映射到项目专用的 `CONTEXT_GENOME_LLM_*` 名称。
 
+也可以使用本地 `.env`：
+
+```bash
+cp .env.example .env
+# 编辑 .env 后：
+./run.sh
+```
+
+`.env` 已被 git 忽略。`run.sh` 会读取它，但不会打印 secrets；真实 shell 环境变量仍然优先。
+
 也可以 editable install：
 
 ```bash
@@ -64,10 +74,21 @@ python -m pip install -e .
 context-genome --host 127.0.0.1 --port 8765
 ```
 
-开发检查：
+常用命令：
 
 ```bash
-python -B -m compileall context_genome skill_garden
+make run      # 启动本地观察器
+make doctor   # 检查 Python、Node、端口、run.sh 和 LLM 运行时提示
+make test     # 运行单元测试
+make check    # 运行完整本地 CI 检查
+make clean    # 清理 Python cache
+```
+
+不用 `make` 时，也可以直接运行：
+
+```bash
+python -B scripts/doctor.py
+python -B -m compileall context_genome skill_garden tests scripts
 python -B -m unittest discover -s tests
 node --check context_genome/web/app.js
 python -B scripts/check_repository_hygiene.py
@@ -116,6 +137,18 @@ export CONTEXT_GENOME_LLM_BASE_URL="https://api.deepseek.com/v1"
 ```
 
 服务启动后，也可以在 `Tune -> LLM Runtime` 里补充或替换 Base URL 和 API key。运行时 key 只保存在服务端内存中，浏览器不会收到 key 原文；保存后输入框会被清空，界面只显示是否已有可用 key。
+
+配置参考：
+
+| 变量 | 作用 | 默认值 |
+| --- | --- | --- |
+| `CONTEXT_GENOME_HOST` | `run.sh` 使用的服务绑定地址 | `127.0.0.1` |
+| `CONTEXT_GENOME_PORT` | `run.sh` 使用的服务端口 | `8765` |
+| `CONTEXT_GENOME_LLM_API_KEY` | OpenAI-compatible API key | 未设置 |
+| `CONTEXT_GENOME_LLM_MODEL` | Chat completion 模型 | 未设置；可在 UI 中填写 |
+| `CONTEXT_GENOME_LLM_BASE_URL` | OpenAI-compatible API base URL | `https://api.openai.com/v1` |
+| `CONTEXT_GENOME_LLM_JSON_MODE` | 请求 JSON object 响应 | `1` |
+| `CONTEXT_GENOME_LLM_DISABLE_THINKING` | 发送 DeepSeek 风格的关闭 thinking 参数 | DeepSeek endpoint 自动开启 |
 
 DeepSeek 端点默认会发送：
 
@@ -255,6 +288,27 @@ runs/<run_id>/
 - `json_rule`: 规则动作先序列化成 JSON 再解析，适合测试 JSON action parser。
 - `prompt_preview`: 不执行 LLM，只把未来要发给模型的 messages 写入每个有机体的 `last_prompt.txt`。
 - `passive`: 有机体只等待，用于观察环境衰减或对照实验。
+
+## 项目结构
+
+```text
+context_genome/
+  agents/      LLM driver、prompt 构造、JSON action 解析
+  engine/      世界模型、生态规则、预设、导出逻辑
+  web/         浏览器 UI 资源
+skill_garden/  旧版导入路径兼容层
+scripts/       本地维护工具，例如 doctor 和仓库卫生检查
+tests/         parser、export、runtime、token budget 等单元测试
+docs/images/   README 截图和 logo 资源
+```
+
+## 常见问题
+
+- **页面能打开，但 LLM Runtime 是红框**：在 `Tune -> LLM Runtime` 中填写模型、Base URL 和 API key，或先写入 `.env` 再运行 `./run.sh`。
+- **8765 端口被占用**：运行 `./run.sh --port 8777`，或设置 `CONTEXT_GENOME_PORT=8777`。
+- **token 消耗太快**：降低 `Calls / tick` 和 `Ticks`，保持 token budget 保护开启，并先使用便宜快速的 flash/mini 模型。
+- **cache hit 率偏低**：把稳定的自我状态和能力定义放在 prompt 前部，减少不必要的上下文变化；比较 prompt 布局时优先短程对照实验。
+- **只想快速做非 LLM smoke test**：在 UI 中选择 `rule` 或 `prompt_preview` 模式，或者本地运行 `make check`。
 
 ## 设计目标
 

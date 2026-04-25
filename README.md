@@ -57,6 +57,16 @@ If the port is busy, use another one:
 
 `run.sh` also accepts `CONTEXT_GENOME_HOST` and `CONTEXT_GENOME_PORT`, and maps common `OPENAI_*` or legacy `SKILL_GARDEN_LLM_*` variables into the project-specific `CONTEXT_GENOME_LLM_*` names for the launched process.
 
+Optional local `.env` setup:
+
+```bash
+cp .env.example .env
+# edit .env, then:
+./run.sh
+```
+
+`.env` is ignored by git. `run.sh` reads it without printing secrets, and real shell environment variables still take priority.
+
 Optional editable install:
 
 ```bash
@@ -64,10 +74,21 @@ python -m pip install -e .
 context-genome --host 127.0.0.1 --port 8765
 ```
 
-Development checks:
+Useful commands:
 
 ```bash
-python -B -m compileall context_genome skill_garden
+make run      # start the local observer
+make doctor   # check Python, Node, port, run.sh, and LLM runtime hints
+make test     # run unit tests
+make check    # run the full local CI check set
+make clean    # remove Python cache artifacts
+```
+
+The same commands can be run directly without `make`:
+
+```bash
+python -B scripts/doctor.py
+python -B -m compileall context_genome skill_garden tests scripts
 python -B -m unittest discover -s tests
 node --check context_genome/web/app.js
 python -B scripts/check_repository_hygiene.py
@@ -116,6 +137,18 @@ export CONTEXT_GENOME_LLM_BASE_URL="https://api.deepseek.com/v1"
 ```
 
 You can also add or replace the Base URL and API key in `Tune -> LLM Runtime` after the server has started. Runtime keys are kept only in server memory. The browser never receives the key back; after saving, the input is cleared and the UI only shows whether a key is available.
+
+Configuration reference:
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `CONTEXT_GENOME_HOST` | Server bind host used by `run.sh` | `127.0.0.1` |
+| `CONTEXT_GENOME_PORT` | Server port used by `run.sh` | `8765` |
+| `CONTEXT_GENOME_LLM_API_KEY` | OpenAI-compatible API key | unset |
+| `CONTEXT_GENOME_LLM_MODEL` | Chat completion model | unset; can be set in the UI |
+| `CONTEXT_GENOME_LLM_BASE_URL` | OpenAI-compatible API base URL | `https://api.openai.com/v1` |
+| `CONTEXT_GENOME_LLM_JSON_MODE` | Request JSON object responses | `1` |
+| `CONTEXT_GENOME_LLM_DISABLE_THINKING` | Send DeepSeek-style thinking disable payload | auto for DeepSeek endpoints |
 
 For DeepSeek-compatible endpoints, requests disable thinking by default:
 
@@ -251,6 +284,27 @@ Use these files to review ecological history, plot outcomes, compare parameter s
 - `json_rule`: Serializes rule actions as JSON and parses them again, useful for testing the action parser.
 - `prompt_preview`: Does not call the LLM; writes future messages to each organism's `last_prompt.txt`.
 - `passive`: Organisms only wait, useful as a control condition.
+
+## Project Layout
+
+```text
+context_genome/
+  agents/      LLM drivers, prompt construction, JSON action parsing
+  engine/      World model, ecology rules, presets, export logic
+  web/         Browser UI assets
+skill_garden/  Legacy compatibility import paths
+scripts/       Local maintenance tools such as doctor and hygiene checks
+tests/         Unit tests for parsing, export, runtime, and token budget guards
+docs/images/   README screenshots and logo assets
+```
+
+## Troubleshooting
+
+- **The page opens but LLM Runtime is red**: Add a model, Base URL, and API key in `Tune -> LLM Runtime`, or set them in `.env` before running `./run.sh`.
+- **Port 8765 is busy**: Run `./run.sh --port 8777`, or set `CONTEXT_GENOME_PORT=8777`.
+- **Token usage climbs too quickly**: Lower `Calls / tick`, lower `Ticks`, keep the token budget guard enabled, and start with a small flash/mini model.
+- **Cache hit rate is low**: Keep stable self-state and ability definitions near the front of the prompt, avoid unnecessary context churn, and prefer short controlled runs when comparing prompt layouts.
+- **Need a fast non-LLM smoke test**: Choose `rule` or `prompt_preview` mode in the UI, or run `make check` locally.
 
 ## Design Goal
 

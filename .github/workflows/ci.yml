@@ -19,7 +19,10 @@ jobs:
           node-version: "20"
 
       - name: Compile Python
-        run: python -B -m compileall context_genome skill_garden
+        run: python -B -m compileall context_genome skill_garden tests scripts
+
+      - name: Run environment doctor
+        run: python -B scripts/doctor.py --json --port 0
 
       - name: Run unit tests
         run: python -B -m unittest discover -s tests
