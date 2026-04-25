@@ -2,6 +2,10 @@
 
 English | [中文](README.zh-CN.md)
 
+[![CI](https://github.com/FINNMATH1992/Context-Genome/actions/workflows/ci.yml/badge.svg)](https://github.com/FINNMATH1992/Context-Genome/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776ab)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 Author: FINNMATH1992
 
 Description: A browser-based LLM context evolution sandbox for studying how editable context genomes shape agent behavior under resource, competition, mutation, and selection pressure.
@@ -38,6 +42,8 @@ This is also a cost-oriented question. Maintaining, copying, mutating, and selec
 - **Action**: Each organism returns exactly one strict JSON action per turn, such as `harvest`, `copy`, `move`, `steal`, `reflect`, or `repair`.
 - **Evolution**: Copying inherits or mutates context; stealing grafts useful neighboring fragments; reflection writes feedback back into the organism's own context.
 - **Researcher**: The browser observer who can tune parameters, pause, export, load, edit context, and inject new seeds.
+
+For system flow, prompt roles, and context inheritance, see [Architecture](docs/architecture.md).
 
 ## Install And Run
 
@@ -185,37 +191,40 @@ This avoids giving earlier-returning requests an unfair ordering advantage. If a
   <sub>Editor view: seed context, selected organism files, ability weights, and editable context genome.</sub>
 </p>
 
-1. **Choose an ecology preset**  
+1. **Choose an ecology preset**
    Use `Ecology` to switch between `sandbox`, `wild`, `tournament`, and `abiogenesis`. `sandbox` is best for debugging; `wild` adds stronger competition and mutation pressure.
 
-2. **Set up the starting world**  
+2. **Pick an experiment template**
+   In `Tune`, use `Quick Smoke`, `Low-Cost LLM`, `Selection Pressure`, or `Cache Study` to populate recommended settings. Templates only adjust controls; press `Reset` to rebuild the starting world.
+
+3. **Set up the starting world**
    In `Tune`, adjust grid size, initial cell energy, minerals, radiation, initial population, organism energy, and per-cell capacity. These setup values apply on the next `Reset`.
 
-3. **Run the ecology**  
+4. **Run the ecology**
    Use `Step` for a single advance and `Play` for continuous simulation. `Ticks` controls how many ticks are advanced per play interval.
 
-4. **Read the grid**  
+5. **Read the grid**
    Cell color represents the resource field. The letter in the corner marks the local context trait. Dots are organisms; borders and side strips distinguish lineages. Event icons briefly flash for births, moves, deaths, steals, and reflections.
 
-5. **Read the live summary**  
+6. **Read the live summary**
    `Observe` compresses the current ecology into a short narrative: population, resources, LLM loop status, dominant behavior, and risk signals.
 
-6. **Inspect a cell**  
+7. **Inspect a cell**
    Click any cell and open `Cell` to see energy, minerals, radiation, entropy, the local context fragment, and visible organisms.
 
-7. **Edit an organism's context**  
+8. **Edit an organism's context**
    Click an organism, open `Edit`, modify its context genome, and press `Save Context`. This is a direct researcher intervention into the organism's method, ability profile, or self-narrative.
 
-8. **Spawn a new seed**  
+9. **Spawn a new seed**
    In `Seed Context`, pick a template or write a new context, select a target cell, and press `Spawn Here`.
 
-9. **Review events**  
+10. **Review events**
    `Log` shows births, copies, moves, steals, reflections, deaths, LLM calls, and JSON parse failures.
 
-10. **Generate a bilingual report**  
+11. **Generate a bilingual report**
     `Report` sends a compact global snapshot to the configured LLM and returns a Markdown report in English first, then Chinese. It highlights the leading lineage, its representative context genome, behavior trends, risks, and suggested next experiments.
 
-11. **Export and replay**  
+12. **Export and replay**
     `Export Run` saves the current experiment under `runs/<run_id>/`. Later, `Run Artifacts` can load the final state back into the observer.
 
 ## Context Genome Format
@@ -260,7 +269,7 @@ First-person context is therefore marked as the model's own prior state. World o
 ## Browser UI
 
 - `Observe`: World summary, signals, recent actions, lineages, and population trace.
-- `Tune`: World setup, selection pressure, LLM runtime, exports, and loading.
+- `Tune`: Experiment templates, world setup, selection pressure, LLM runtime, exports, and loading.
 - `Cell`: The selected cell and organisms inside it.
 - `Edit`: Seed context and individual organism context editing.
 - `Report`: One-click LLM report of the current ecology, English first and Chinese second.
@@ -313,6 +322,8 @@ scripts/       Local maintenance tools such as doctor and hygiene checks
 tests/         Unit tests for parsing, export, runtime, and token budget guards
 docs/images/   README screenshots and logo assets
 ```
+
+For a deeper implementation map, see [docs/architecture.md](docs/architecture.md).
 
 ## Troubleshooting
 

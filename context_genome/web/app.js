@@ -45,8 +45,118 @@ const ui = {
   reportOutput: $("#reportOutput"),
   runSelect: $("#runSelect"),
   loadRunBtn: $("#loadRunBtn"),
+  experimentTemplateStatus: $("#experimentTemplateStatus"),
+  experimentTemplateHint: $("#experimentTemplateHint"),
+  experimentButtons: [...document.querySelectorAll("[data-experiment]")],
   tabButtons: [...document.querySelectorAll("[data-tab]")],
   tabPanels: [...document.querySelectorAll("[data-tab-panel]")],
+};
+
+const EXPERIMENT_TEMPLATES = {
+  quick: {
+    label: "Quick Smoke",
+    preset: "sandbox",
+    agent: "rule",
+    values: {
+      speed: 5,
+      width: 12,
+      height: 12,
+      initialOrgs: 8,
+      initialCellEnergy: 100,
+      initialCellMineral: 45,
+      radiation: 0.002,
+      initialOrgEnergy: 55,
+      maxActivePerCell: 4,
+      conflict: 0,
+      delete: 0,
+      mutation: 0,
+      disaster: 0,
+      regen: 6,
+      maintenance: 0.8,
+      llmCap: 0,
+      llmBudget: 1000000,
+      temperature: 0.2,
+    },
+    hint: "Rule-agent smoke test. Reset, then Step or Play to validate ecology without model cost.",
+  },
+  lowcost: {
+    label: "Low-Cost LLM",
+    preset: "sandbox",
+    agent: "llm_json",
+    values: {
+      speed: 1,
+      width: 12,
+      height: 12,
+      initialOrgs: 4,
+      initialCellEnergy: 110,
+      initialCellMineral: 45,
+      radiation: 0.002,
+      initialOrgEnergy: 55,
+      maxActivePerCell: 3,
+      conflict: 0,
+      delete: 0,
+      mutation: 0,
+      disaster: 0,
+      regen: 4.5,
+      maintenance: 0.9,
+      llmCap: 4,
+      llmBudget: 1000000,
+      temperature: 0.15,
+    },
+    hint: "Small LLM run for behavior checks. Keep Play short and watch the token budget card.",
+  },
+  pressure: {
+    label: "Selection Pressure",
+    preset: "wild",
+    agent: "llm_json",
+    values: {
+      speed: 2,
+      width: 16,
+      height: 16,
+      initialOrgs: 18,
+      initialCellEnergy: 85,
+      initialCellMineral: 55,
+      radiation: 0.015,
+      initialOrgEnergy: 50,
+      maxActivePerCell: 3,
+      conflict: 1,
+      delete: 1,
+      mutation: 1.2,
+      disaster: 3,
+      regen: 3.5,
+      maintenance: 1.05,
+      llmCap: 8,
+      llmBudget: 10000000,
+      temperature: 0.25,
+    },
+    hint: "Evolution pressure preset. Reset to seed a competitive world with mutation and disasters.",
+  },
+  cache: {
+    label: "Cache Study",
+    preset: "tournament",
+    agent: "llm_json",
+    values: {
+      speed: 1,
+      width: 14,
+      height: 14,
+      initialOrgs: 8,
+      initialCellEnergy: 100,
+      initialCellMineral: 50,
+      radiation: 0.002,
+      initialOrgEnergy: 58,
+      maxActivePerCell: 3,
+      conflict: 0,
+      delete: 0,
+      mutation: 0,
+      disaster: 0,
+      regen: 4,
+      maintenance: 0.9,
+      llmCap: 6,
+      llmBudget: 5000000,
+      temperature: 0.05,
+    },
+    hint: "Stable prompt-cache study. Compare cache hit after short, repeated Step runs.",
+  },
 };
 
 let state = null;
@@ -123,6 +233,9 @@ function fillSeedTemplates(presetName) {
 function bindEvents() {
   ui.tabButtons.forEach((button) => {
     button.addEventListener("click", () => activateTab(button.dataset.tab));
+  });
+  ui.experimentButtons.forEach((button) => {
+    button.addEventListener("click", () => applyExperimentTemplate(button.dataset.experiment));
   });
 
   ui.presetSelect.addEventListener("change", () => {
@@ -344,6 +457,48 @@ function applyConfigToControls(config) {
   ui.maxActivePerCellInput.value = config.max_active_per_cell ?? 4;
   ui.llmTokenBudgetInput.value = config.llm_token_budget ?? 10000000;
   renderControlValues();
+}
+
+async function applyExperimentTemplate(key) {
+  const template = EXPERIMENT_TEMPLATES[key];
+  if (!template || !presets) return;
+  stopPlaying();
+  if (template.preset && presets.presets[template.preset]) {
+    ui.presetSelect.value = template.preset;
+    applyConfigToControls(presets.presets[template.preset]);
+    fillSeedTemplates(template.preset);
+  }
+  if (template.agent) ui.agentModeSelect.value = template.agent;
+  const values = template.values || {};
+  setControlValue(ui.speedInput, values.speed);
+  setControlValue(ui.widthInput, values.width);
+  setControlValue(ui.heightInput, values.height);
+  setControlValue(ui.initialOrgsInput, values.initialOrgs);
+  setControlValue(ui.initialCellEnergyInput, values.initialCellEnergy);
+  setControlValue(ui.initialCellMineralInput, values.initialCellMineral);
+  setControlValue(ui.radiationInput, values.radiation);
+  setControlValue(ui.initialOrgEnergyInput, values.initialOrgEnergy);
+  setControlValue(ui.maxActivePerCellInput, values.maxActivePerCell);
+  setControlValue(ui.conflictToggle, values.conflict);
+  setControlValue(ui.deleteToggle, values.delete);
+  setControlValue(ui.mutationToggle, values.mutation);
+  setControlValue(ui.disasterToggle, values.disaster);
+  setControlValue(ui.regenInput, values.regen);
+  setControlValue(ui.maintenanceInput, values.maintenance);
+  setControlValue(ui.llmCapInput, values.llmCap);
+  setControlValue(ui.llmTokenBudgetInput, values.llmBudget);
+  setControlValue(ui.llmTempInput, values.temperature);
+  renderControlValues();
+  renderLlmStatus();
+  ui.experimentTemplateStatus.textContent = template.label;
+  ui.experimentTemplateHint.textContent = template.hint;
+  await applyLiveConfig();
+}
+
+function setControlValue(input, value) {
+  if (value !== undefined && value !== null) {
+    input.value = String(value);
+  }
 }
 
 function percentValue(value, fallback) {
