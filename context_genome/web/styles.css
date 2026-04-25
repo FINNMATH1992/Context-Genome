@@ -431,6 +431,31 @@ textarea {
   background: linear-gradient(to right, var(--indigo) 0 4px, #ffffff 4px);
 }
 
+.legend-trait {
+  display: inline-grid !important;
+  place-items: center;
+  background: #168b88;
+  color: #ffffff;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.legend-selected {
+  background: #1b262d;
+  box-shadow: inset 0 0 0 3px #ffffff;
+}
+
+.legend-size {
+  background: linear-gradient(135deg, rgba(201, 139, 34, 0.88), rgba(47, 125, 98, 0.38));
+}
+
+.legend-entropy {
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0 1px, transparent 1px 4px),
+    #1b262d;
+}
+
 .legend-dot {
   border-radius: 50% !important;
   background: var(--ink);
