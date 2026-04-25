@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "note": "Deterministic rule-agent demo gallery. No LLM calls or secrets are used.",
+  "demos": [
+    {
+      "slug": "sandbox-seed30",
+      "title": "Stable Forager Expansion",
+      "title_zh": "稳定采集扩张",
+      "preset": "sandbox",
+      "seed": 30,
+      "ticks": 220,
+      "sample_every": 4,
+      "gif": "docs/images/demo-sandbox-seed30.gif",
+      "thesis": "A moderate ecology favors compact contexts that harvest, repair, and copy once local resources recover.",
+      "thesis_zh": "温和生态更偏好紧凑上下文：先采集和修复，再等局部资源恢复后复制。",
+      "stats": {
+        "population": 70,
+        "corpses": 10,
+        "lineages": 3,
+        "births": 84,
+        "deaths": 14,
+        "diversity": 0.669,
+        "avg_integrity": 0.995
+      },
+      "strongest_lineage": {
+        "lineage_id": "lin_68905e",
+        "population": 42,
+        "occupied_cells": 33,
+        "avg_integrity": 0.9968079012848693,
+        "births": 52,
+        "score": 198.9680790128487,
+        "dominant_strategy": "forage"
+      },
+      "representative": {
+        "org_id": "org_075f0c",
+        "strategy": "forage",
+        "generation": 2,
+        "energy": 56.2,
+        "integrity": 1.0,
+        "abilities": {
+          "attack": 0.97,
+          "copy": 0.92,
+          "defense": 0.92,
+          "harvest": 1.31,
+          "move": 0.97,
+          "reflect": 0.97,
+          "repair": 0.97,
+          "steal": 0.97
+        },
+        "context_excerpt": [
+          "strategy: forage",
+          "ability.harvest: 1.35",
+          "ability.copy: 0.95",
+          "ability.defense: 0.95",
+          "I exist inside a finite directory world.",
+          "I keep this directory runnable, harvest nearby energy, repair damage, and copy",
+          "my stable pattern into safer empty cells when resources are high."
+        ]
+      }
+    },
+    {
+      "slug": "wild-seed16",
+      "title": "Disaster Pressure Selects Minimal Context",
+      "title_zh": "灾害压力选择最小上下文",
+      "preset": "wild",
+      "seed": 16,
+      "ticks": 220,
+      "sample_every": 4,
+      "gif": "docs/images/demo-wild-seed16.gif",
+      "thesis": "A noisy world with mutation and disasters can favor smaller contexts that copy quickly and carry less maintenance burden.",
+      "thesis_zh": "带突变和灾害的噪声世界可能偏好更小的上下文：复制更快，维护负担更低。",
+      "stats": {
+        "population": 74,
+        "corpses": 5,
+        "lineages": 12,
+        "births": 106,
+        "deaths": 32,
+        "diversity": 0.609,
+        "avg_integrity": 0.973
+      },
+      "strongest_lineage": {
+        "lineage_id": "lin_0c5bd6",
+        "population": 36,
+        "occupied_cells": 33,
+        "avg_integrity": 0.9688953813208495,
+        "births": 52,
+        "score": 192.68895381320849,
+        "dominant_strategy": "minimal"
+      },
+      "representative": {
+        "org_id": "org_be9551",
+        "strategy": "minimal",
+        "generation": 4,
+        "energy": 46.1,
+        "integrity": 1.0,
+        "abilities": {
+          "attack": 0.72,
+          "copy": 0.92,
+          "defense": 0.96,
+          "harvest": 1.3,
+          "move": 1.06,
+          "reflect": 1.11,
+          "repair": 0.96,
+          "steal": 0.96
+        },
+        "context_excerpt": [
+          "strategy: minimal",
+          "ability.copy: 1.2",
+          "ability.move: 1.1",
+          "ability.reflect: 1.15",
+          "ability.attack: 0.75",
+          "I stay runnable. I harvest when weak. I copy a tiny stable seed when strong.",
+          "I return strict JSON."
+        ]
+      }
+    },
+    {
+      "slug": "tournament-seed19",
+      "title": "Selection Under Conflict",
+      "title_zh": "冲突压力下的选择",
+      "preset": "tournament",
+      "seed": 19,
+      "ticks": 220,
+      "sample_every": 4,
+      "gif": "docs/images/demo-tournament-seed19.gif",
+      "thesis": "A fixed competitive start rewards contexts that balance spread speed with enough integrity to survive crowding.",
+      "thesis_zh": "固定竞争开局会奖励能在扩张速度和拥挤生存之间取得平衡的上下文。",
+      "stats": {
+        "population": 87,
+        "corpses": 6,
+        "lineages": 11,
+        "births": 104,
+        "deaths": 17,
+        "diversity": 0.705,
+        "avg_integrity": 0.962
+      },
+      "strongest_lineage": {
+        "lineage_id": "lin_337883",
+        "population": 32,
+        "occupied_cells": 30,
+        "avg_integrity": 0.969071271634198,
+        "births": 34,
+        "score": 170.69071271634198,
+        "dominant_strategy": "forage"
+      },
+      "representative": {
+        "org_id": "org_24ae29",
+        "strategy": "forage",
+        "generation": 3,
+        "energy": 49.9,
+        "integrity": 0.944,
+        "abilities": {
+          "attack": 0.97,
+          "copy": 0.92,
+          "defense": 0.92,
+          "harvest": 1.31,
+          "move": 0.97,
+          "reflect": 0.97,
+          "repair": 0.97,
+          "steal": 0.97
+        },
+        "context_excerpt": [
+          "strategy: forage",
+          "ability.harvest: 1.35",
+          "ability.copy: 0.95",
+          "ability.defense: 0.95",
+          "I exist inside a finite directory world.",
+          "I keep this directory runnable, harvest nearby energy, repair damage, and copy",
+          "my stable pattern into safer empty cells when resources are high."
+        ]
+      }
+    }
+  ]
+}

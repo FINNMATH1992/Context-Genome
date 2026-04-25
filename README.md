@@ -47,7 +47,7 @@ For system flow, prompt roles, and context inheritance, see [Architecture](docs/
 
 ## Install And Run
 
-Context Genome currently uses only the Python standard library. Run it from the project root with Python 3.11 or newer:
+The browser observer uses only the Python standard library. Run it from the project root with Python 3.11 or newer:
 
 ```bash
 ./run.sh
@@ -82,6 +82,12 @@ Optional editable install:
 ```bash
 python -m pip install -e .
 context-genome --host 127.0.0.1 --port 8765
+```
+
+Optional documentation tools, including GIF regeneration, use Pillow:
+
+```bash
+python -m pip install -e ".[docs]"
 ```
 
 Useful commands:
@@ -198,6 +204,23 @@ python -B scripts/render_evolution_gif.py \
   --run-summary docs/examples/context-genome-sandbox-seed7-summary.json \
   --ticks 140 \
   --sample-every 2
+```
+
+## Demo Gallery
+
+For a faster first impression, see the [Demo Gallery](docs/demo-gallery.md). It contains three deterministic no-token runs:
+
+| Case | What it demonstrates | Reproduce |
+| --- | --- | --- |
+| Stable Forager Expansion | moderate resources selecting compact harvest/repair/copy behavior | `sandbox`, seed `30` |
+| Disaster Pressure Selects Minimal Context | mutation and disasters favoring smaller contexts with lower maintenance burden | `wild`, seed `16` |
+| Selection Under Conflict | fixed competitive start selecting lineages under crowding and conflict | `tournament`, seed `19` |
+
+Regenerate the gallery assets and metadata with:
+
+```bash
+python -m pip install -e ".[docs]"
+python -B scripts/build_demo_gallery.py
 ```
 
 ## How To Play
@@ -341,6 +364,7 @@ context_genome/
 skill_garden/  Legacy compatibility import paths
 scripts/       Local maintenance tools such as doctor, hygiene checks, and GIF rendering
 tests/         Unit tests for parsing, export, runtime, and token budget guards
+docs/          Architecture notes, demo gallery, screenshots, and sanitized examples
 docs/images/   README screenshots and logo assets
 docs/examples/ Small sanitized run summaries used by docs
 ```

@@ -21,6 +21,9 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+docs = ["Pillow>=10"]
+
 [project.urls]
 Homepage = "https://github.com/FINNMATH1992/Context-Genome"
 Repository = "https://github.com/FINNMATH1992/Context-Genome"
