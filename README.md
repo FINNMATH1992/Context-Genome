@@ -82,7 +82,7 @@ Useful commands:
 
 ```bash
 make run      # start the local observer
-make doctor   # check Python, Node, port, run.sh, and LLM runtime hints
+make doctor   # check Python, Node, server health, port, run.sh, and LLM runtime hints
 make test     # run unit tests
 make check    # run the full local CI check set
 make clean    # remove Python cache artifacts
@@ -99,6 +99,14 @@ python -B scripts/check_repository_hygiene.py
 ```
 
 The GitHub Actions workflow runs the same checks on push and pull request.
+
+Operational health endpoint:
+
+```bash
+curl http://127.0.0.1:8765/api/health
+```
+
+The health response reports product/version, tick, preset, agent mode, organism counts, token budget status, and whether the LLM runtime is configured. It never returns the API key.
 
 ### Run In GitHub Codespaces
 
@@ -310,6 +318,7 @@ docs/images/   README screenshots and logo assets
 
 - **The page opens but LLM Runtime is red**: Add a model, Base URL, and API key in `Tune -> LLM Runtime`, or set them in `.env` before running `./run.sh`.
 - **Port 8765 is busy**: Run `./run.sh --port 8777`, or set `CONTEXT_GENOME_PORT=8777`.
+- **Not sure what is wrong locally**: Run `make doctor`. If the server is already running, it will read `/api/health`; otherwise it checks whether the target port is free.
 - **Token usage climbs too quickly**: Lower `Calls / tick`, lower `Ticks`, keep the token budget guard enabled, and start with a small flash/mini model.
 - **Cache hit rate is low**: Keep stable self-state and ability definitions near the front of the prompt, avoid unnecessary context churn, and prefer short controlled runs when comparing prompt layouts.
 - **Need a fast non-LLM smoke test**: Choose `rule` or `prompt_preview` mode in the UI, or run `make check` locally.
@@ -329,3 +338,7 @@ The long-term goal is to observe a tiny form of LLM methodology evolution: not p
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
+## Contributing And Security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local workflow and PR expectations. See [SECURITY.md](SECURITY.md) for API-key, run-artifact, and screenshot hygiene.

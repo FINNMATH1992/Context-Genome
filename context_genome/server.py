@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import parse_qs, urlparse
 
+from . import __version__
 from .agents import AGENT_MODES
 from .agents.drivers import LLMDriverError, _call_chat_completion, _llm_runtime, llm_runtime_status, update_llm_runtime_overrides
 from .engine import ContextGenomeWorld, get_preset
@@ -62,6 +63,9 @@ class GenomeHandler(BaseHTTPRequestHandler):
     def _handle_api_get(self, path: str, query: Dict[str, list]) -> None:
         with STATE.lock:
             world = STATE.world
+            if path == "/api/health":
+                self._send_json(_health_payload(world))
+                return
             if path == "/api/state":
                 self._send_json(world.snapshot())
                 return
@@ -271,6 +275,26 @@ def main() -> None:
     httpd = ThreadingHTTPServer((args.host, args.port), GenomeHandler)
     print(f"Context Genome running at http://{args.host}:{args.port}")
     httpd.serve_forever()
+
+
+def _health_payload(world: ContextGenomeWorld) -> Dict[str, Any]:
+    stats = world.stats()
+    runtime = llm_runtime_status(world.config.llm_model)
+    return {
+        "ok": True,
+        "product": "Context Genome",
+        "version": __version__,
+        "preset": world.config.name,
+        "agent_mode": world.config.agent_mode,
+        "tick": world.tick,
+        "active_organisms": stats.get("active_organisms", 0),
+        "lineages": stats.get("lineage_count", 0),
+        "llm_runtime": runtime,
+        "llm_total_tokens": stats.get("llm_total_tokens", 0),
+        "llm_token_budget": stats.get("llm_token_budget", 0),
+        "llm_token_budget_remaining": stats.get("llm_token_budget_remaining", 0),
+        "llm_token_budget_exhausted": stats.get("llm_token_budget_exhausted", False),
+    }
 
 
 def _build_report_context(world: ContextGenomeWorld) -> Dict[str, Any]:

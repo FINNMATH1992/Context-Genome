@@ -10,6 +10,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
+from urllib.error import URLError
+from urllib.request import urlopen
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +22,12 @@ class Check:
     name: str
     status: str
     detail: str
+
+
+@dataclass(frozen=True)
+class ServerProbe:
+    payload: dict[str, object] | None
+    error: str = ""
 
 
 def pick_env(env: Mapping[str, str], names: list[str], default: str = "") -> tuple[str, str]:
@@ -122,14 +130,50 @@ def check_run_script() -> Check:
     return Check("run.sh", "ok", "executable")
 
 
-def check_port(host: str, port: int) -> Check:
+def health_probe_host(host: str) -> str:
+    return "127.0.0.1" if host in {"0.0.0.0", "::"} else host
+
+
+def fetch_server_health(host: str, port: int) -> ServerProbe:
+    if port == 0:
+        return ServerProbe(None)
+    url = f"http://{health_probe_host(host)}:{port}/api/health"
+    try:
+        with urlopen(url, timeout=0.6) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (OSError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+        return ServerProbe(None, str(exc))
+    if isinstance(payload, dict) and payload.get("ok") is True:
+        return ServerProbe(payload)
+    return ServerProbe(None, "health endpoint did not return ok")
+
+
+def check_server_health(probe: ServerProbe, port: int) -> Check:
+    if port == 0:
+        return Check("server", "ok", "server probe skipped for dynamic port 0")
+    health = probe.payload
+    if not health:
+        if "Operation not permitted" in probe.error or "Errno 1" in probe.error:
+            return Check("server", "warn", "server probe unavailable in this sandbox; try curl /api/health locally")
+        return Check("server", "warn", "not running yet; start it with ./run.sh")
+    product = str(health.get("product") or "Context Genome")
+    version = str(health.get("version") or "unknown")
+    tick = int(health.get("tick") or 0)
+    return Check("server", "ok", f"{product} {version} is running at tick {tick}")
+
+
+def check_port(host: str, port: int, health: dict[str, object] | None = None) -> Check:
     if port == 0:
         return Check("port", "ok", "port check skipped for dynamic port 0")
+    if health:
+        return Check("port", "ok", f"{host}:{port} is already serving Context Genome")
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(0.5)
             sock.bind((host, port))
     except OSError as exc:
+        if getattr(exc, "errno", None) == 1:
+            return Check("port", "warn", f"port probe unavailable in this sandbox for {host}:{port}")
         return Check("port", "warn", f"{host}:{port} is not available ({exc})")
     return Check("port", "ok", f"{host}:{port} is available")
 
@@ -150,11 +194,13 @@ def check_llm(env: Mapping[str, str]) -> list[Check]:
 
 
 def build_checks(host: str, port: int, env: Mapping[str, str]) -> list[Check]:
+    probe = fetch_server_health(host, port)
     return [
         check_python(),
         check_node(),
         check_run_script(),
-        check_port(host, port),
+        check_server_health(probe, port),
+        check_port(host, port, probe.payload),
         *check_llm(env),
     ]
 
