@@ -79,15 +79,15 @@
 
         <aside class="side-pane" aria-label="Researcher workspace">
           <div class="tabbar" role="tablist" aria-label="Workspace sections">
-            <button id="tabObserve" class="is-active" type="button" role="tab" aria-selected="true" aria-controls="panelObserve" data-tab="observe">Observe</button>
-            <button id="tabTune" type="button" role="tab" aria-selected="false" aria-controls="panelTune" data-tab="tune">Tune</button>
+            <button id="tabObserve" type="button" role="tab" aria-selected="false" aria-controls="panelObserve" data-tab="observe">Observe</button>
+            <button id="tabTune" class="is-active" type="button" role="tab" aria-selected="true" aria-controls="panelTune" data-tab="tune">Tune</button>
             <button id="tabCell" type="button" role="tab" aria-selected="false" aria-controls="panelCell" data-tab="cell">Cell</button>
             <button id="tabEdit" type="button" role="tab" aria-selected="false" aria-controls="panelEdit" data-tab="edit">Edit</button>
             <button id="tabReport" type="button" role="tab" aria-selected="false" aria-controls="panelReport" data-tab="report">Report</button>
             <button id="tabLog" type="button" role="tab" aria-selected="false" aria-controls="panelLog" data-tab="log">Log</button>
           </div>
 
-          <section id="panelObserve" class="tab-panel is-active" role="tabpanel" aria-labelledby="tabObserve" data-tab-panel="observe">
+          <section id="panelObserve" class="tab-panel" role="tabpanel" aria-labelledby="tabObserve" data-tab-panel="observe" hidden>
             <section class="summary-pane" aria-label="World summary">
               <section class="panel narrative-panel">
                 <div class="panel-head">
@@ -130,7 +130,48 @@
             </section>
           </section>
 
-          <section id="panelTune" class="tab-panel" role="tabpanel" aria-labelledby="tabTune" data-tab-panel="tune" hidden>
+          <section id="panelTune" class="tab-panel is-active" role="tabpanel" aria-labelledby="tabTune" data-tab-panel="tune">
+            <section id="llmRuntimePanel" class="panel runtime-panel">
+              <div class="panel-head">
+                <h2>LLM Runtime</h2>
+                <span id="llmRuntimeStatus">checking</span>
+              </div>
+              <div class="llm-controls">
+                <label>
+                  Model
+                  <input id="llmModelInput" placeholder="env CONTEXT_GENOME_LLM_MODEL" />
+                </label>
+                <label>
+                  Base URL
+                  <input id="llmBaseUrlInput" placeholder="https://api.openai.com/v1" />
+                </label>
+                <label>
+                  API key
+                  <input id="llmApiKeyInput" type="password" autocomplete="off" placeholder="paste key to save in memory" />
+                </label>
+                <div class="runtime-actions">
+                  <button id="saveRuntimeBtn" type="button">Save Runtime</button>
+                  <button id="clearRuntimeKeyBtn" type="button">Clear Key</button>
+                  <span id="runtimeSecretStatus">key not saved</span>
+                </div>
+                <label>
+                  Calls / tick
+                  <output id="llmCapValue">8</output>
+                  <input id="llmCapInput" type="range" min="0" max="64" step="1" value="8" />
+                </label>
+                <label>
+                  Token budget
+                  <output id="llmTokenBudgetValue">10M</output>
+                  <input id="llmTokenBudgetInput" type="range" min="0" max="50000000" step="100000" value="10000000" />
+                </label>
+                <label>
+                  Temperature
+                  <output id="llmTempValue">0.2</output>
+                  <input id="llmTempInput" type="range" min="0" max="2" step="0.05" value="0.2" />
+                </label>
+              </div>
+            </section>
+
             <section class="panel">
               <div class="panel-head">
                 <h2>World Setup</h2>
@@ -200,47 +241,6 @@
                 <label>
                   <span>Maintenance <output id="maintenanceValue">1.0</output></span>
                   <input id="maintenanceInput" type="range" min="0.1" max="3" step="0.05" value="1" />
-                </label>
-              </div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-head">
-                <h2>LLM Runtime</h2>
-                <span id="llmRuntimeStatus">checking</span>
-              </div>
-              <div class="llm-controls">
-                <label>
-                  Model
-                  <input id="llmModelInput" placeholder="env CONTEXT_GENOME_LLM_MODEL" />
-                </label>
-                <label>
-                  Base URL
-                  <input id="llmBaseUrlInput" placeholder="https://api.openai.com/v1" />
-                </label>
-                <label>
-                  API key
-                  <input id="llmApiKeyInput" type="password" autocomplete="off" placeholder="paste key to save in memory" />
-                </label>
-                <div class="runtime-actions">
-                  <button id="saveRuntimeBtn" type="button">Save Runtime</button>
-                  <button id="clearRuntimeKeyBtn" type="button">Clear Key</button>
-                  <span id="runtimeSecretStatus">key not saved</span>
-                </div>
-                <label>
-                  Calls / tick
-                  <output id="llmCapValue">8</output>
-                  <input id="llmCapInput" type="range" min="0" max="64" step="1" value="8" />
-                </label>
-                <label>
-                  Token budget
-                  <output id="llmTokenBudgetValue">10M</output>
-                  <input id="llmTokenBudgetInput" type="range" min="0" max="50000000" step="100000" value="10000000" />
-                </label>
-                <label>
-                  Temperature
-                  <output id="llmTempValue">0.2</output>
-                  <input id="llmTempInput" type="range" min="0" max="2" step="0.05" value="0.2" />
                 </label>
               </div>
             </section>

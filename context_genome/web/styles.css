@@ -725,6 +725,21 @@ textarea {
   font-size: 12px;
 }
 
+.runtime-panel.needs-key {
+  border-color: #d94b4b;
+  box-shadow: 0 0 0 1px rgba(217, 75, 75, 0.28), var(--shadow-soft);
+}
+
+.runtime-panel.needs-key .panel-head span {
+  color: #b43333;
+  font-weight: 750;
+}
+
+.runtime-panel.needs-key #llmApiKeyInput {
+  border-color: #d94b4b;
+  background: #fff8f8;
+}
+
 .lineage-list,
 .org-list,
 .event-log {

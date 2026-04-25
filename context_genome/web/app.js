@@ -57,7 +57,7 @@ let playing = false;
 let playTimer = null;
 let busy = false;
 let runs = [];
-let activeTab = "observe";
+let activeTab = "tune";
 
 async function api(path, body = null) {
   const options = body
@@ -378,6 +378,7 @@ function renderLlmStatus() {
   const hasModel = Boolean(ui.llmModelInput.value.trim() || runtime.model);
   const hasUnsavedKey = Boolean(ui.llmApiKeyInput.value.trim());
   const status = $("#llmRuntimeStatus");
+  $("#llmRuntimePanel")?.classList.toggle("needs-key", !hasKey);
   if (hasKey && hasModel) {
     status.textContent = "configured";
   } else if (hasUnsavedKey && hasModel) {
