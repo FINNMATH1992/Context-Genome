@@ -749,6 +749,7 @@ function renderState() {
   const gridSummary = $("#gridSummary");
   const gridSummaryText = `${occupiedCells} occupied / ${corpseCells} corpse cells / max energy ${Math.max(...state.cells.map((cell) => cell.energy), 0).toFixed(1)}`;
   gridSummary.textContent = gridSummaryText;
+  gridSummary.title = gridSummaryText;
   gridSummary.dataset.default = gridSummaryText;
   $("#birthDeathStat").textContent = `${state.stats.births} births / ${state.stats.deaths} deaths`;
   $("#scheduledStat").textContent = `${state.stats.scheduled_last_tick} scheduled`;
@@ -1042,11 +1043,15 @@ function renderGrid() {
     button.style.setProperty("--size-alpha", String(sizeRatio * 0.28));
     button.setAttribute("aria-label", cellSummaryText(cell));
     button.addEventListener("mouseenter", () => {
-      $("#gridSummary").textContent = cellSummaryText(cell);
+      const summary = $("#gridSummary");
+      const text = cellSummaryText(cell);
+      summary.textContent = text;
+      summary.title = text;
     });
     button.addEventListener("mouseleave", () => {
       const summary = $("#gridSummary");
       summary.textContent = summary.dataset.default || "";
+      summary.title = summary.dataset.default || "";
     });
     button.addEventListener("click", async () => {
       selectedCell = { x: cell.x, y: cell.y };
